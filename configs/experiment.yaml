@@ -1,0 +1,93 @@
+data:
+  assets: [USDC, USDT, DAI, FRAX, TUSD, USDe, PYUSD, BUSD]
+  venues: [curve, uniswap_v3, binance, coinbase, kraken]
+  resolution: "1min"
+  graph:
+    lookback_hours: 6          # rolling window for edge construction (Uniswap paper)
+    edge_methods: [correlation, flow, comovement]
+    corr_threshold: 0.4
+
+episodes:
+  real:
+    - name: "UST_Terra"
+      start: "2022-05-07"
+      end: "2022-05-13"
+      trigger: UST
+    - name: "USDC_SVB"
+      start: "2023-03-10"
+      end: "2023-03-15"
+      trigger: USDC
+    - name: "USDT_Oct2018"
+      start: "2018-10-14"
+      end: "2018-10-16"
+      trigger: USDT
+    - name: "USDT_May2022"
+      start: "2022-05-12"
+      end: "2022-05-14"
+      trigger: USDT
+    - name: "FRAX_stress"
+      start: "2023-03-11"
+      end: "2023-03-16"
+      trigger: FRAX
+    - name: "BUSD_winddown"
+      start: "2023-02-13"
+      end: "2023-02-17"
+      trigger: BUSD
+  synthetic:
+    n_episodes: 200            # StressBench augmentation
+    seed: 42
+
+labels:
+  horizon_minutes: [30, 60, 240, 1440]   # lead-time analysis
+  depeg_bps: 10                           # |deviation| threshold
+  tvl_shock_pct: 5.0
+
+split:
+  strategy: chronological      # never shuffle — leakage prevention
+  train_frac: 0.70
+  val_frac: 0.15
+  test_frac: 0.15
+
+features:
+  node:
+    - price_ratio              # vs $1 peg
+    - realized_vol_1h
+    - realized_vol_24h
+    - log_volume_1h
+    - amihud_illiquidity
+    - kyle_lambda
+    - tvl_usd
+    - ou_half_life             # mean-reversion speed from IAQF
+    - lop_wedge                # cross-venue law-of-one-price deviation
+  edge:
+    - price_correlation_6h
+    - cross_pool_flow_usd
+    - lead_lag_minutes         # from permutation-test cross-correlation
+    - shared_lp_pct
+
+models:
+  baseline:
+    - majority_class
+    - persistence
+  classical:
+    - logistic_regression
+    - xgboost
+  sequential:
+    - lstm
+  graph:
+    - graphsage
+    - gat
+
+training:
+  metric: weighted_f1          # handles class imbalance
+  class_weight: balanced
+  epochs: 100
+  patience: 10
+  lr: 1e-3
+  batch_size: 32
+  seed: 42
+
+interpretability:
+  xgb_gain_topk: 20
+  gnnexplainer_epochs: 200
+  hub_centrality_metric: betweenness

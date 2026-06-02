@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "stablecoin-contagion-gnn"
+version = "0.1.0"
+description = "Temporal GNN for predictive, interpretable stablecoin contagion"
+requires-python = ">=3.10"
+dependencies = [
+    # Data
+    "numpy>=1.26",
+    "pandas>=2.2",
+    "polars>=0.20",
+    "pyarrow>=15.0",
+    # Stats / econometrics
+    "scipy>=1.12",
+    "statsmodels>=0.14",
+    "scikit-learn>=1.4",
+    # Graph / GNN
+    "networkx>=3.3",
+    "torch>=2.2",
+    "torch-geometric>=2.5",
+    # Gradient boosting
+    "xgboost>=2.0",
+    # Visualisation / interpretability
+    "matplotlib>=3.8",
+    "seaborn>=0.13",
+    "plotly>=5.20",
+    "shap>=0.45",
+    # Config / I-O
+    "pyyaml>=6.0",
+    "pydantic>=2.6",
+    "tqdm>=4.66",
+    "requests>=2.31",
+    "python-dotenv>=1.0",
+    # Reproducibility
+    "pytest>=8.0",
+]
+
+[project.optional-dependencies]
+dev = ["ipykernel", "jupyter", "black", "ruff", "mypy"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
