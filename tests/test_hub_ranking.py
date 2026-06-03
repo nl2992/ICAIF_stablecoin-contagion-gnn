@@ -39,7 +39,9 @@ def test_hub_scores_shape():
     df = compute_hub_scores(reg, masks, G, propagators)
     assert len(df) == len(reg)
     assert "hub_score" in df.columns
-    assert "rank" in df.columns
+    assert "rank_full" in df.columns
+    assert "rank_structural" in df.columns
+    assert "hub_score_structural" in df.columns
 
 
 def test_hub_scores_in_unit_interval():
@@ -55,7 +57,7 @@ def test_hub_scores_rank_1_has_highest_score():
     G = _simple_digraph(reg)
     masks = {str(n): float(i + 1) * 0.3 for i, n in enumerate(reg)}
     df = compute_hub_scores(reg, masks, G, {"USDC/binance": 1})
-    rank1 = df[df["rank"] == 1].iloc[0]
+    rank1 = df[df["rank_full"] == 1].iloc[0]
     assert rank1["hub_score"] == df["hub_score"].max()
 
 
