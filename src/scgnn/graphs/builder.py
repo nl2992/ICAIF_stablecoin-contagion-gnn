@@ -1,12 +1,15 @@
 """
-Rolling-window temporal graph construction.
+Rolling-window temporal directed graph construction.
 
-Node = (asset, venue, fee_tier) tuple.
-Edges updated every step using a 6-hour rolling lookback (matching Uniswap paper).
+Node = NodeID (asset, venue, fee_tier) with stable integer index from NodeRegistry.
+Edges are directed (lead-lag asymmetric) and updated every hour using a 6-hour
+rolling lookback window — matching the Uniswap paper's edge construction.
+
+Edge direction convention:
+  i → j  means "i leads j" (positive lead-lag) or "flow moves from i to j".
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
 import networkx as nx
@@ -14,109 +17,69 @@ import numpy as np
 import pandas as pd
 from scipy.stats import pearsonr
 
-
-@dataclass
-class NodeID:
-    asset: str
-    venue: str
-    fee_tier: Optional[str] = None
-
-    def __str__(self) -> str:
-        parts = [self.asset, self.venue]
-        if self.fee_tier:
-            parts.append(self.fee_tier)
-        return "/".join(parts)
-
-    def __hash__(self) -> int:
-        return hash(str(self))
-
-    def __eq__(self, other: object) -> bool:
-        return isinstance(other, NodeID) and str(self) == str(other)
-
-
-def build_node_universe(
-    assets: List[str],
-    venues: List[str],
-    fee_tiers: Optional[Dict[str, List[str]]] = None,
-) -> List[NodeID]:
-    nodes = []
-    for asset in assets:
-        for venue in venues:
-            if fee_tiers and venue in fee_tiers:
-                for tier in fee_tiers[venue]:
-                    nodes.append(NodeID(asset, venue, tier))
-            else:
-                nodes.append(NodeID(asset, venue))
-    return nodes
-
-
-def _rolling_correlation(
-    s1: pd.Series,
-    s2: pd.Series,
-    window: str = "6h",
-) -> float:
-    aligned = pd.concat([s1, s2], axis=1).dropna()
-    if len(aligned) < 10:
-        return 0.0
-    r, _ = pearsonr(aligned.iloc[:, 0], aligned.iloc[:, 1])
-    return float(r) if not np.isnan(r) else 0.0
+from scgnn.data.registry import NodeID, NodeRegistry
+from scgnn.features.edge_features import (
+    rolling_correlation,
+    cross_pool_flow,
+    lead_lag_minutes,
+    shared_lp_pct,
+)
+from scgnn.utils.time import last_window, last_window_series
 
 
 def build_snapshot_graph(
-    price_returns: pd.DataFrame,      # columns = node str IDs, index = timestamps
+    price_returns: pd.DataFrame,
     node_ids: List[NodeID],
     t: pd.Timestamp,
     lookback: str = "6h",
     corr_threshold: float = 0.4,
-    flow_data: Optional[pd.DataFrame] = None,
-) -> nx.Graph:
-    """Return a NetworkX graph for a single time snapshot."""
-    window_data = price_returns[price_returns.index <= t].last(lookback)
-    G = nx.Graph()
+    flow_df: Optional[pd.DataFrame] = None,
+    lp_sets: Optional[Dict[str, set]] = None,
+    directed: bool = True,
+) -> nx.DiGraph:
+    """
+    Build a directed graph snapshot for time t.
+
+    Edges are added when |correlation| ≥ corr_threshold over the lookback window.
+    Direction is set by the sign of lead_lag: if i leads j, edge goes i→j.
+    Self-loops are excluded.
+    """
+    window = last_window(price_returns[price_returns.index <= t], lookback)
+    G = nx.DiGraph() if directed else nx.Graph()
 
     for node in node_ids:
-        G.add_node(str(node), asset=node.asset, venue=node.venue)
+        G.add_node(str(node), asset=node.asset, venue=node.venue, fee_tier=node.fee_tier)
 
     node_strs = [str(n) for n in node_ids]
     for i, ni in enumerate(node_strs):
         for j, nj in enumerate(node_strs):
-            if j <= i:
+            if i == j:
                 continue
-            if ni not in window_data.columns or nj not in window_data.columns:
+            if ni not in window.columns or nj not in window.columns:
                 continue
-            corr = _rolling_correlation(window_data[ni], window_data[nj])
-            if abs(corr) >= corr_threshold:
-                attrs: dict = {"correlation": corr, "weight": abs(corr)}
-                if flow_data is not None:
-                    key = f"{ni}_{nj}"
-                    if key in flow_data.columns:
-                        flow_row = flow_data[flow_data.index <= t].last(lookback)
-                        attrs["cross_pool_flow_usd"] = float(flow_row[key].sum()) if len(flow_row) else 0.0
-                G.add_edge(ni, nj, **attrs)
+            si = window[ni].dropna()
+            sj = window[nj].dropna()
+            corr = rolling_correlation(si, sj)
+            if abs(corr) < corr_threshold:
+                continue
+
+            ll = lead_lag_minutes(si, sj)
+            # Direction: positive ll → ni leads nj → edge ni→nj
+            if directed and ll < 0:
+                continue  # nj leads ni; that edge is handled when i,j are swapped
+
+            attrs: dict = {
+                "correlation": corr,
+                "weight": abs(corr),
+                "lead_lag_min": ll,
+            }
+            if flow_df is not None:
+                attrs["cross_pool_flow_usd_log"] = cross_pool_flow(flow_df, ni, nj)
+            if lp_sets is not None:
+                attrs["shared_lp_pct"] = shared_lp_pct(lp_sets, ni, nj)
+
+            G.add_edge(ni, nj, **attrs)
     return G
-
-
-def lead_lag_minutes(
-    s1: pd.Series,
-    s2: pd.Series,
-    max_lag: int = 120,
-) -> int:
-    """
-    Return the lag (in minutes) at which s2 maximally cross-correlates with s1.
-    Positive = s1 leads s2.  Uses permutation-test baseline from contagion repo.
-    """
-    best_lag, best_corr = 0, -np.inf
-    for lag in range(-max_lag, max_lag + 1):
-        shifted = s2.shift(lag).dropna()
-        aligned = s1.reindex(shifted.index).dropna()
-        shifted = shifted.reindex(aligned.index)
-        if len(aligned) < 10:
-            continue
-        r, _ = pearsonr(aligned, shifted)
-        if r > best_corr:
-            best_corr = r
-            best_lag = lag
-    return best_lag
 
 
 def build_temporal_graph_sequence(
@@ -125,9 +88,44 @@ def build_temporal_graph_sequence(
     timestamps: pd.DatetimeIndex,
     lookback: str = "6h",
     corr_threshold: float = 0.4,
-) -> List[Tuple[pd.Timestamp, nx.Graph]]:
-    """Return a list of (timestamp, graph) pairs — one per step."""
+    directed: bool = True,
+) -> List[Tuple[pd.Timestamp, nx.DiGraph]]:
+    """One snapshot per timestamp — the temporal graph sequence for an episode."""
     return [
-        (t, build_snapshot_graph(price_returns, node_ids, t, lookback, corr_threshold))
+        (t, build_snapshot_graph(price_returns, node_ids, t, lookback, corr_threshold, directed=directed))
         for t in timestamps
     ]
+
+
+def graph_to_pyg(
+    G: nx.DiGraph,
+    registry: NodeRegistry,
+    node_feature_matrix: np.ndarray,    # (N, F)
+    edge_feature_dim: int = 4,
+) -> "torch_geometric.data.Data":
+    """Convert a NetworkX snapshot to a PyG Data object."""
+    from torch_geometric.data import Data
+    import torch
+
+    node_strs = registry.node_strs()
+    edges_src, edges_dst, edge_attrs = [], [], []
+    for u, v, attr in G.edges(data=True):
+        if u in node_strs and v in node_strs:
+            edges_src.append(node_strs.index(u))
+            edges_dst.append(node_strs.index(v))
+            edge_attrs.append([
+                attr.get("correlation", 0.0),
+                attr.get("cross_pool_flow_usd_log", 0.0),
+                float(attr.get("lead_lag_min", 0)),
+                attr.get("shared_lp_pct", 0.0),
+            ])
+
+    x = torch.tensor(node_feature_matrix, dtype=torch.float32)
+    if edges_src:
+        edge_index = torch.tensor([edges_src, edges_dst], dtype=torch.long)
+        edge_attr = torch.tensor(edge_attrs, dtype=torch.float32)
+    else:
+        edge_index = torch.zeros((2, 0), dtype=torch.long)
+        edge_attr = torch.zeros((0, edge_feature_dim), dtype=torch.float32)
+
+    return Data(x=x, edge_index=edge_index, edge_attr=edge_attr)

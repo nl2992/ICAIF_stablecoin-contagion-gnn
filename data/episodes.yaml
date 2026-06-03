@@ -1,0 +1,98 @@
+# ============================================================
+# Stablecoin stress episodes
+# Pre-registered episode list — do not add/remove retroactively.
+#
+# split: train | val | test
+# trigger_type: algo | fiat_regulatory | fiat_bank | crypto_backed
+#   Used to ensure test set contains a *different* trigger type
+#   from training — the headline generalization claim.
+#
+# Notes: pre-event baseline (7 days) is prepended automatically
+# by data/build_dataset.py; dates here are the stress window only.
+# ============================================================
+
+episodes:
+
+  # ── TEST SET (held out entirely from training/tuning) ──
+  # Trigger: fiat_bank — USDC lost its dollar peg after SVB failure.
+  # Chosen as test because it is the clearest "exogenous" shock
+  # (counterparty failure, not market microstructure) and
+  # propagated to FRAX / DAI via USDC exposure.
+  - name: USDC_SVB
+    trigger: USDC
+    trigger_type: fiat_bank
+    start: "2023-03-10"
+    end:   "2023-03-15"
+    split: test
+    notes: >
+      SVB failure revealed USDC's $3.3B exposure.  Contagion to FRAX
+      (80% USDC-backed) and DAI (Peg Stability Module holds USDC).
+      Clear exogenous shock; good out-of-distribution test case.
+
+  # ── VALIDATION SET ──
+  - name: DAI_FTX
+    trigger: DAI
+    trigger_type: crypto_backed
+    start: "2022-11-09"
+    end:   "2022-11-14"
+    split: val
+    notes: >
+      FTX collapse; DAI's Maker collateral partly exposed to FTX.
+      Moderate depeg (~40 bps), contained.  Different trigger from train.
+
+  - name: BUSD_winddown
+    trigger: BUSD
+    trigger_type: fiat_regulatory
+    start: "2023-02-13"
+    end:   "2023-02-17"
+    split: val
+    notes: >
+      NYDFS ordered Paxos to stop minting BUSD.  Slow regulatory
+      wind-down, modest price impact, but large TVL outflow.
+
+  # ── TRAINING SET ──
+  - name: UST_Terra
+    trigger: UST
+    trigger_type: algo
+    start: "2022-05-07"
+    end:   "2022-05-13"
+    split: train
+    notes: >
+      UST death spiral; $40B lost.  Contagion to USDT (brief >100 bps
+      depeg), FRAX, and broader DeFi.  The canonical algo-stablecoin
+      failure.  Note: UST is NOT in the node universe (already failed)
+      but the contagion to in-universe assets is the signal.
+
+  - name: USDT_Oct2018
+    trigger: USDT
+    trigger_type: fiat_bank
+    start: "2018-10-14"
+    end:   "2018-10-16"
+    split: train
+    notes: >
+      USDT reached ~$0.85 on Kraken amid Tether banking concerns.
+      Limited DeFi exposure at this date (pre-Uniswap v2); primarily
+      CEX pair dynamics.  Data availability may be incomplete.
+
+  - name: USDT_May2022
+    trigger: USDT
+    trigger_type: algo           # contagion from UST collapse
+    start: "2022-05-12"
+    end:   "2022-05-14"
+    split: train
+    notes: >
+      Secondary USDT depeg during Terra collapse.  USDT dropped ~50 bps
+      as market lost confidence broadly.  Good train example of
+      indirect contagion from algo failure to fiat-backed.
+
+  - name: FRAX_SVB
+    trigger: FRAX
+    trigger_type: fiat_bank      # contagion from USDC/SVB
+    start: "2023-03-11"
+    end:   "2023-03-16"
+    split: train
+    notes: >
+      FRAX depeg driven by USDC exposure.  Included in train
+      (not test) because the trigger is FRAX, not USDC directly —
+      models must learn to predict FRAX from USDC shock, whereas
+      USDC_SVB tests prediction of the initial shock.

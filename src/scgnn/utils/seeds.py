@@ -1,0 +1,24 @@
+"""Global seed management — import and call set_all_seeds() once at entry points."""
+from __future__ import annotations
+
+import os
+import random
+
+import numpy as np
+
+GLOBAL_SEED = 42
+
+
+def set_all_seeds(seed: int = GLOBAL_SEED) -> None:
+    random.seed(seed)
+    np.random.seed(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    try:
+        import torch
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+    except ImportError:
+        pass
