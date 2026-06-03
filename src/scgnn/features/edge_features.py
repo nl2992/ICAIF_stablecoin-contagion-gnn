@@ -52,12 +52,20 @@ def lead_lag_minutes(
     min_periods: int = 10,
 ) -> int:
     """
-    Signed lead-lag: positive value means s1 leads s2 by that many minutes.
-    Uses cross-correlation peak (matches contagion-repo permutation approach).
+    Signed lead-lag: POSITIVE value means s1 LEADS s2 by that many minutes.
+
+    Convention (verified by test_directed_edges.py::test_leading_node_is_edge_source):
+      If s2[t] = s1[t-k]  (s1 is k steps ahead of s2), returns +k.
+      If s1[t] = s2[t-k]  (s2 leads s1), returns -k.
+
+    Implementation: scan lag in [-max_lag, max_lag]; compute corr(s1[t], s2[t-lag]).
+    Maximum at lag=+k when s2[t-k] = s1[t], i.e., s1 leads by k.
+    We negate the raw `s2.shift(lag)` index to match this convention.
     """
     best_lag, best_corr = 0, -np.inf
     for lag in range(-max_lag, max_lag + 1):
-        shifted = s2.shift(lag).dropna()
+        # corr(s1[t], s2[t-lag]):  lag>0 → s1 leads s2 by lag steps
+        shifted = s2.shift(-lag).dropna()
         aligned = s1.reindex(shifted.index).dropna()
         shifted = shifted.reindex(aligned.index)
         if len(aligned) < min_periods:

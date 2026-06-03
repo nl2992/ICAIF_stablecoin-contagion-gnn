@@ -21,9 +21,10 @@ from scgnn.data.registry import NodeID, NodeRegistry
 
 class TestDeadAssets:
     def test_busd_detected_after_delist(self):
-        idx = pd.date_range("2023-02-13", periods=200, freq="1min", tz="UTC")
-        # Price goes to zero after delist
-        prices = pd.Series([1.0] * 50 + [0.0] * 150, index=idx)
+        # Series must extend past the 30-day grace period (43 200 min + buffer)
+        idx = pd.date_range("2023-02-13", periods=50_000, freq="1min", tz="UTC")
+        # Price stays at $1 during grace, then zeros after ~32 days
+        prices = pd.Series([1.0] * 46_000 + [0.0] * 4_000, index=idx)
         assert is_delisting_artifact(prices, "BUSD")
 
     def test_active_asset_not_flagged(self):

@@ -72,19 +72,73 @@ def is_delisting_artifact(
     price: pd.Series,
     asset: str,
     threshold_zero_pct: float = 0.30,
+    wind_down_window_days: int = 30,
 ) -> bool:
     """
-    Return True if price series appears to be a delisting artifact
-    (>30% of values are 0 or NaN after the known delisting date).
+    Return True if price series appears to be a DELISTING ARTIFACT —
+    i.e., a gradual wind-down to zero caused by regulatory action or
+    market withdrawal, not a genuine crisis trajectory.
+
+    Critical distinction for UST vs BUSD:
+      - UST (May 2022): the collapse IS the contagion event.  Price goes
+        from $1 to near-zero in 3 days — this is a CRISIS, not an artifact.
+        We should NOT flag the May 2022 window as an artifact.
+      - BUSD (post Feb 2023): Paxos stops minting; BUSD slowly redeems
+        at $1 and volume drops to zero.  Prices going to zero 30+ days after
+        delist announcement are artifacts, not contagion signals.
+
+    Rule:
+      Artifact = price drops to near-zero (> threshold_zero_pct of bars)
+                 in the window [delist_date + 30 days, ...].
+      We do NOT flag the window [crisis_date, delist_date + 30 days]
+      because that window may contain real contagion events.
     """
     status = next((s for s in ASSET_STATUS_REGISTRY if s.asset == asset), None)
     if status is None or status.delisted_date is None:
         return False
-    after_delist = price[price.index >= status.delisted_date]
-    if len(after_delist) == 0:
+
+    # Grace window: the first 30 days after delisting may contain real events
+    artifact_start = status.delisted_date + pd.Timedelta(days=wind_down_window_days)
+    after_grace = price[price.index >= artifact_start]
+    if len(after_grace) < 10:
         return False
-    zero_or_nan = (after_delist.isna() | (after_delist == 0)).mean()
+
+    zero_or_nan = (after_grace.isna() | (after_grace <= 0.01)).mean()
     return float(zero_or_nan) > threshold_zero_pct
+
+
+def classify_price_trajectory(
+    price: pd.Series,
+    asset: str,
+) -> str:
+    """
+    Classify a price series as one of:
+      'genuine_crisis'   — rapid depeg that recovers or ends in default
+      'delist_winddown'  — gradual redemption/withdrawal to zero
+      'stable'           — no significant deviation
+      'unknown'          — insufficient data
+
+    Used to decide whether to include the episode or mark as artifact.
+    """
+    if len(price) < 10:
+        return "unknown"
+    dev_bps = (price - 1.0).abs() * 10_000
+    max_dev = float(dev_bps.max())
+    final_price = float(price.iloc[-1]) if not price.iloc[-1:].isna().all() else 0.0
+
+    status = next((s for s in ASSET_STATUS_REGISTRY if s.asset == asset), None)
+    is_delisted = status is not None and status.delisted_date is not None
+
+    if max_dev < 5:
+        return "stable"
+    if max_dev > 50 and final_price < 0.10 and is_delisted:
+        # Large deviation AND ends near zero AND known delisted → crisis trajectory
+        return "genuine_crisis"
+    if max_dev > 50 and not is_delisted:
+        return "genuine_crisis"
+    if is_delisted and final_price < 0.05:
+        return "delist_winddown"
+    return "genuine_crisis"
 
 
 # ------------------------------------------------------------------ 2018 feature support

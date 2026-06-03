@@ -1,12 +1,18 @@
 """
-Rolling-window temporal directed graph construction.
+Rolling-window temporal DIRECTED graph construction.
 
-Node = NodeID (asset, venue, fee_tier) with stable integer index from NodeRegistry.
-Edges are directed (lead-lag asymmetric) and updated every hour using a 6-hour
-rolling lookback window — matching the Uniswap paper's edge construction.
+Design decisions (pre-registered):
+  - Edges are DIRECTED: i → j means i leads j (positive lead-lag).
+    Contagion has a direction (origin → victim); an undirected graph
+    discards the lead-lag signal we went to the trouble of computing.
+  - Rolling 6h lookback window, updated hourly.
+  - Episode-boundary guard: the window is CLIPPED to episode_start so
+    edges at the beginning of an episode cannot be built from the
+    tail of the previous episode.
+  - Candidate pairs: all (i, j) pairs for active nodes in the episode,
+    i ≠ j; edge added only when |correlation| ≥ corr_threshold.
 
-Edge direction convention:
-  i → j  means "i leads j" (positive lead-lag) or "flow moves from i to j".
+Edge direction preserved in PyG data object (asymmetric edge_index).
 """
 from __future__ import annotations
 
@@ -36,37 +42,72 @@ def build_snapshot_graph(
     flow_df: Optional[pd.DataFrame] = None,
     lp_sets: Optional[Dict[str, set]] = None,
     directed: bool = True,
+    episode_start: Optional[pd.Timestamp] = None,
+    active_mask: Optional[Dict[str, bool]] = None,
 ) -> nx.DiGraph:
     """
     Build a directed graph snapshot for time t.
 
-    Edges are added when |correlation| ≥ corr_threshold over the lookback window.
-    Direction is set by the sign of lead_lag: if i leads j, edge goes i→j.
-    Self-loops are excluded.
+    Parameters
+    ----------
+    price_returns : DataFrame of 1-min log-returns (columns = node str IDs)
+    node_ids      : node universe for this snapshot
+    t             : current snapshot timestamp
+    lookback      : rolling lookback window (default 6h)
+    corr_threshold: minimum |correlation| to form an edge
+    episode_start : if provided, the window is clipped to max(t-lookback, episode_start)
+                    — prevents edges from bleeding across episode boundaries
+    active_mask   : {node_str: bool} from compute_active_mask; inactive nodes
+                    are added as isolated graph nodes (no edges)
+
+    Edge direction
+    --------------
+    lead_lag_minutes(s_i, s_j) > 0  →  i leads j  →  edge i → j
+    lead_lag_minutes(s_i, s_j) < 0  →  j leads i  →  edge j → i
+    We only add each directed edge once (skip reverse duplicate).
     """
-    window = last_window(price_returns[price_returns.index <= t], lookback)
+    # Episode-boundary guard: clip window start
+    window_start = t - pd.Timedelta(lookback)
+    if episode_start is not None:
+        window_start = max(window_start, episode_start)
+
+    window = price_returns[
+        (price_returns.index >= window_start) & (price_returns.index <= t)
+    ]
+
     G = nx.DiGraph() if directed else nx.Graph()
 
     for node in node_ids:
-        G.add_node(str(node), asset=node.asset, venue=node.venue, fee_tier=node.fee_tier)
+        ns = str(node)
+        is_active = active_mask.get(ns, True) if active_mask else True
+        G.add_node(ns, asset=node.asset, venue=node.venue, fee_tier=node.fee_tier,
+                   active=is_active)
 
     node_strs = [str(n) for n in node_ids]
+
     for i, ni in enumerate(node_strs):
         for j, nj in enumerate(node_strs):
-            if i == j:
+            if i >= j:
+                continue   # process each unordered pair once
+
+            # Skip inactive nodes
+            if active_mask and not (active_mask.get(ni, True) and active_mask.get(nj, True)):
                 continue
+
             if ni not in window.columns or nj not in window.columns:
                 continue
+
             si = window[ni].dropna()
             sj = window[nj].dropna()
+            if len(si) < 10 or len(sj) < 10:
+                continue
+
             corr = rolling_correlation(si, sj)
             if abs(corr) < corr_threshold:
                 continue
 
-            ll = lead_lag_minutes(si, sj)
-            # Direction: positive ll → ni leads nj → edge ni→nj
-            if directed and ll < 0:
-                continue  # nj leads ni; that edge is handled when i,j are swapped
+            # Directed edge: determine direction from lead-lag
+            ll = lead_lag_minutes(si, sj)   # positive = ni leads nj
 
             attrs: dict = {
                 "correlation": corr,
@@ -78,8 +119,45 @@ def build_snapshot_graph(
             if lp_sets is not None:
                 attrs["shared_lp_pct"] = shared_lp_pct(lp_sets, ni, nj)
 
-            G.add_edge(ni, nj, **attrs)
+            if directed:
+                if ll >= 0:
+                    G.add_edge(ni, nj, **attrs)   # ni leads nj
+                else:
+                    # Reverse: nj leads ni; negate lead_lag for the reverse edge
+                    attrs["lead_lag_min"] = -ll
+                    G.add_edge(nj, ni, **attrs)
+            else:
+                G.add_edge(ni, nj, **attrs)
+
     return G
+
+
+def graph_density_report(G: nx.DiGraph, episode_name: str = "") -> dict:
+    """
+    Report graph density after active-node masking.
+    Warns when density is near zero (GNN message passing has nothing to aggregate).
+    """
+    n = G.number_of_nodes()
+    e = G.number_of_edges()
+    active = sum(1 for _, d in G.nodes(data=True) if d.get("active", True))
+    max_possible = active * (active - 1)   # directed, no self-loops
+    density = e / max_possible if max_possible > 0 else 0.0
+    report = {
+        "episode": episode_name,
+        "n_nodes_total": n,
+        "n_nodes_active": active,
+        "n_edges": e,
+        "density": round(density, 4),
+    }
+    if density < 0.05 and active > 2:
+        import warnings
+        warnings.warn(
+            f"Graph density {density:.4f} < 5% for episode '{episode_name}' "
+            f"({active} active nodes, {e} edges). "
+            "GNN message passing may have nothing to aggregate.",
+            stacklevel=2,
+        )
+    return report
 
 
 def build_temporal_graph_sequence(
@@ -89,10 +167,17 @@ def build_temporal_graph_sequence(
     lookback: str = "6h",
     corr_threshold: float = 0.4,
     directed: bool = True,
+    episode_start: Optional[pd.Timestamp] = None,
+    active_mask: Optional[Dict[str, bool]] = None,
 ) -> List[Tuple[pd.Timestamp, nx.DiGraph]]:
-    """One snapshot per timestamp — the temporal graph sequence for an episode."""
+    """One directed snapshot per timestamp — the temporal graph sequence for an episode."""
     return [
-        (t, build_snapshot_graph(price_returns, node_ids, t, lookback, corr_threshold, directed=directed))
+        (t, build_snapshot_graph(
+            price_returns, node_ids, t, lookback, corr_threshold,
+            directed=directed,
+            episode_start=episode_start,
+            active_mask=active_mask,
+        ))
         for t in timestamps
     ]
 
@@ -100,10 +185,10 @@ def build_temporal_graph_sequence(
 def graph_to_pyg(
     G: nx.DiGraph,
     registry: NodeRegistry,
-    node_feature_matrix: np.ndarray,    # (N, F)
+    node_feature_matrix: np.ndarray,
     edge_feature_dim: int = 4,
 ) -> "torch_geometric.data.Data":
-    """Convert a NetworkX snapshot to a PyG Data object."""
+    """Convert a NetworkX directed snapshot to a PyG Data object. Direction preserved."""
     from torch_geometric.data import Data
     import torch
 
