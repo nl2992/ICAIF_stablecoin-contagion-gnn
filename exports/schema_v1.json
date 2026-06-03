@@ -1,0 +1,75 @@
+{
+  "schema_version": "1",
+  "description": "Stable export interface between stablecoin-contagion-gnn (Repo 1) and the ABM (Repo 2). Breaking changes increment schema_version.",
+  "artifacts": {
+    "hub_ranking": {
+      "filename_pattern": "hub_ranking_v1_{episode_tag}.csv",
+      "required_columns": [
+        "node",
+        "asset",
+        "venue",
+        "rank",
+        "hub_score",
+        "ci_lo",
+        "ci_hi",
+        "episode_tag",
+        "is_real"
+      ],
+      "all_columns": [
+        "node",
+        "asset",
+        "venue",
+        "fee_tier",
+        "rank",
+        "hub_score",
+        "ci_lo",
+        "ci_hi",
+        "ci_std",
+        "gnn_mask_sum",
+        "betweenness",
+        "propagator_label",
+        "norm_gnn",
+        "norm_bc_x_prop",
+        "episode_tag",
+        "is_real"
+      ],
+      "notes": "The ABM uses hub_score (or ci_lo for conservative scenarios) to set per-node shock propagation probability. Filter is_real=True for strongest evidence."
+    },
+    "calibration": {
+      "filename_pattern": "calibration_v1_{episode_tag}.csv",
+      "required_columns": [
+        "episode",
+        "asset",
+        "ou_half_life_min",
+        "propagation_rho",
+        "peak_depeg_bps",
+        "episode_tag",
+        "is_real"
+      ],
+      "all_columns": [
+        "episode",
+        "asset",
+        "venue",
+        "ou_half_life_min",
+        "ou_half_life_ci_lo",
+        "ou_half_life_ci_hi",
+        "propagation_rho",
+        "propagation_lag_min",
+        "peak_depeg_bps",
+        "shock_duration_min",
+        "episode_tag",
+        "is_real"
+      ],
+      "notes": "Provides OU half-life, propagation rho, and peak depeg spread as empirical calibration targets for the ABM's stress dynamics."
+    }
+  },
+  "node_id_convention": {
+    "format": "asset/venue[/fee_tier]",
+    "examples": [
+      "USDC/binance",
+      "USDT/curve/3pool",
+      "DAI/uniswap_v3/500"
+    ],
+    "note": "fee_tier is empty string for CEX nodes"
+  }
+}

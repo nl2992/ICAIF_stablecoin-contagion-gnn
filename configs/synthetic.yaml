@@ -1,0 +1,53 @@
+# ============================================================
+# StressBench synthetic episode parameters
+#
+# Documented here so synthetic episodes are exactly regenerable.
+# Changing any parameter invalidates the existing synthetic cache
+# and requires a re-run of the augmentation step.
+# ============================================================
+
+synthetic:
+  # Global RNG seed — all synthetic episodes are deterministic given this seed.
+  seed: 42
+
+  # Number of synthetic episodes to generate per run.
+  n_episodes: 200
+
+  # Block resampling: each synthetic episode is built by sampling a
+  # contiguous block of `window_hours` from a non-stressed period
+  # (defined as: no node has |peg_deviation| > 10 bps for the entire block).
+  window_hours: 72        # 3 days of pre-episode calm
+
+  # Depeg shock: after block-resampling, inject a synthetic shock
+  # to the trigger asset sampled uniformly from [shock_bps_lo, shock_bps_hi].
+  # The shock is applied as a ramp-up over shock_ramp_min minutes, sustained
+  # for shock_sustain_min, then the series is left to mean-revert naturally.
+  shock_bps_lo: 10
+  shock_bps_hi: 150
+  shock_ramp_min: 5
+  shock_sustain_min: 30
+
+  # Trigger selection: the trigger asset for each synthetic episode is
+  # sampled proportionally to the frequency of that asset being a trigger
+  # in the real episodes (i.e. USDC, USDT more likely than PYUSD).
+  trigger_weights:
+    USDC: 0.25
+    USDT: 0.25
+    DAI:  0.15
+    FRAX: 0.15
+    TUSD: 0.05
+    USDe: 0.05
+    PYUSD: 0.05
+    BUSD: 0.05
+
+  # Validation gate: synthetic episodes must pass a KS test vs real episodes
+  # on the following moments before being used.  Episodes failing at alpha=0.05
+  # on ANY moment are discarded.
+  validate: true
+  validation_alpha: 0.05
+  validation_moments:
+    - mean_rvol_1h
+    - mean_rvol_24h
+    - mean_autocorr_lag1
+    - mean_price_deviation_bps
+    - max_price_deviation_bps
