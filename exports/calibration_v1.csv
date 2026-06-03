@@ -1,0 +1,8 @@
+episode,asset,venue,ou_half_life_min,propagation_rho,propagation_lag_min,peak_depeg_bps,shock_duration_min,n_victims,episode_tag,is_real
+BUSD_winddown,BUSD,binance,,0.0,,101.0,0.0,2,BUSD_winddown,True
+DAI_FTX,DAI,coinbase,27853427.63,0.5,,270.6,0.0,2,DAI_FTX,True
+FRAX_SVB,FRAX,binance,,1.0,,1376.0,0.0,6,FRAX_SVB,True
+USDC_SVB,USDC,binance,579.26,1.0,1.0,1376.0,2853.0,5,USDC_SVB,True
+USDT_May2022,USDT,coinbase,62.72,0.8333,1001.0,7656.35,1332.0,6,USDT_May2022,True
+USDT_Oct2018,USDT,coinbase,,1.0,,2291.0,0.0,1,USDT_Oct2018,True
+UST_Terra,UST,binance,10990.69,0.8333,5242.0,520.0,5949.0,6,UST_Terra,True

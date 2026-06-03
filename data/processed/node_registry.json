@@ -5,94 +5,34 @@
   },
   {
     "idx": 1,
-    "node": "BUSD/coinbase"
-  },
-  {
-    "idx": 2,
-    "node": "BUSD/kraken"
-  },
-  {
-    "idx": 3,
-    "node": "DAI/binance"
-  },
-  {
-    "idx": 4,
     "node": "DAI/coinbase"
   },
   {
-    "idx": 5,
-    "node": "DAI/kraken"
+    "idx": 2,
+    "node": "FDUSD/binance"
   },
   {
-    "idx": 6,
+    "idx": 3,
     "node": "FRAX/binance"
   },
   {
-    "idx": 7,
-    "node": "FRAX/coinbase"
-  },
-  {
-    "idx": 8,
-    "node": "FRAX/kraken"
-  },
-  {
-    "idx": 9,
-    "node": "PYUSD/binance"
-  },
-  {
-    "idx": 10,
-    "node": "PYUSD/coinbase"
-  },
-  {
-    "idx": 11,
-    "node": "PYUSD/kraken"
-  },
-  {
-    "idx": 12,
+    "idx": 4,
     "node": "TUSD/binance"
   },
   {
-    "idx": 13,
-    "node": "TUSD/coinbase"
-  },
-  {
-    "idx": 14,
-    "node": "TUSD/kraken"
-  },
-  {
-    "idx": 15,
+    "idx": 5,
     "node": "USDC/binance"
   },
   {
-    "idx": 16,
-    "node": "USDC/coinbase"
+    "idx": 6,
+    "node": "USDP/binance"
   },
   {
-    "idx": 17,
-    "node": "USDC/kraken"
-  },
-  {
-    "idx": 18,
-    "node": "USDT/binance"
-  },
-  {
-    "idx": 19,
+    "idx": 7,
     "node": "USDT/coinbase"
   },
   {
-    "idx": 20,
-    "node": "USDT/kraken"
-  },
-  {
-    "idx": 21,
-    "node": "USDe/binance"
-  },
-  {
-    "idx": 22,
-    "node": "USDe/coinbase"
-  },
-  {
-    "idx": 23,
-    "node": "USDe/kraken"
+    "idx": 8,
+    "node": "UST/binance"
   }
 ]

@@ -1,0 +1,38 @@
+{
+  "provenance": "real: Binance(USDT) + Coinbase(USD), 1-min; USDT/USD peg-adjusted",
+  "feature_dim": 48,
+  "n_nodes": 9,
+  "episodes_built": [
+    "USDC_SVB",
+    "DAI_FTX",
+    "BUSD_winddown",
+    "UST_Terra",
+    "USDT_Oct2018",
+    "USDT_May2022",
+    "FRAX_SVB"
+  ],
+  "splits": {
+    "train": [
+      "UST_Terra",
+      "USDT_Oct2018",
+      "USDT_May2022",
+      "FRAX_SVB"
+    ],
+    "val": [
+      "DAI_FTX",
+      "BUSD_winddown"
+    ],
+    "test": [
+      "USDC_SVB"
+    ]
+  },
+  "horizons": [
+    30,
+    60,
+    240,
+    1440
+  ],
+  "train_samples": 2851,
+  "val_samples": 628,
+  "test_samples": 845
+}

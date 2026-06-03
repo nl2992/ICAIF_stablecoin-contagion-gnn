@@ -1,0 +1,97 @@
+{
+  "schema_version": "1",
+  "n_episodes": 7,
+  "rows": [
+    {
+      "episode": "BUSD_winddown",
+      "asset": "BUSD",
+      "venue": "binance",
+      "ou_half_life_min": NaN,
+      "propagation_rho": 0.0,
+      "propagation_lag_min": NaN,
+      "peak_depeg_bps": 101.0,
+      "shock_duration_min": 0.0,
+      "n_victims": 2,
+      "episode_tag": "BUSD_winddown",
+      "is_real": true
+    },
+    {
+      "episode": "DAI_FTX",
+      "asset": "DAI",
+      "venue": "coinbase",
+      "ou_half_life_min": 27853427.63,
+      "propagation_rho": 0.5,
+      "propagation_lag_min": NaN,
+      "peak_depeg_bps": 270.6,
+      "shock_duration_min": 0.0,
+      "n_victims": 2,
+      "episode_tag": "DAI_FTX",
+      "is_real": true
+    },
+    {
+      "episode": "FRAX_SVB",
+      "asset": "FRAX",
+      "venue": "binance",
+      "ou_half_life_min": NaN,
+      "propagation_rho": 1.0,
+      "propagation_lag_min": NaN,
+      "peak_depeg_bps": 1376.0,
+      "shock_duration_min": 0.0,
+      "n_victims": 6,
+      "episode_tag": "FRAX_SVB",
+      "is_real": true
+    },
+    {
+      "episode": "USDC_SVB",
+      "asset": "USDC",
+      "venue": "binance",
+      "ou_half_life_min": 579.26,
+      "propagation_rho": 1.0,
+      "propagation_lag_min": 1.0,
+      "peak_depeg_bps": 1376.0,
+      "shock_duration_min": 2853.0,
+      "n_victims": 5,
+      "episode_tag": "USDC_SVB",
+      "is_real": true
+    },
+    {
+      "episode": "USDT_May2022",
+      "asset": "USDT",
+      "venue": "coinbase",
+      "ou_half_life_min": 62.72,
+      "propagation_rho": 0.8333,
+      "propagation_lag_min": 1001.0,
+      "peak_depeg_bps": 7656.35,
+      "shock_duration_min": 1332.0,
+      "n_victims": 6,
+      "episode_tag": "USDT_May2022",
+      "is_real": true
+    },
+    {
+      "episode": "USDT_Oct2018",
+      "asset": "USDT",
+      "venue": "coinbase",
+      "ou_half_life_min": NaN,
+      "propagation_rho": 1.0,
+      "propagation_lag_min": NaN,
+      "peak_depeg_bps": 2291.0,
+      "shock_duration_min": 0.0,
+      "n_victims": 1,
+      "episode_tag": "USDT_Oct2018",
+      "is_real": true
+    },
+    {
+      "episode": "UST_Terra",
+      "asset": "UST",
+      "venue": "binance",
+      "ou_half_life_min": 10990.69,
+      "propagation_rho": 0.8333,
+      "propagation_lag_min": 5242.0,
+      "peak_depeg_bps": 520.0,
+      "shock_duration_min": 5949.0,
+      "n_victims": 6,
+      "episode_tag": "UST_Terra",
+      "is_real": true
+    }
+  ]
+}

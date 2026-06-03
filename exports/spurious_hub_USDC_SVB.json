@@ -1,0 +1,9 @@
+{
+  "episode": "USDC_SVB",
+  "spurious_hub": "BUSD/binance",
+  "betweenness": 0.07142857142857142,
+  "betweenness_rank": 1,
+  "propagator_label": 0,
+  "gnn_saliency": 12.254678130149841,
+  "rationale": "High structural centrality / correlation but did not enter new stress within 24h of the origin onset \u2014 a correlational hub that the ABM counterfactual should reveal as non-causal."
+}

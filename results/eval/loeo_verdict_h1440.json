@@ -1,0 +1,17 @@
+{
+  "protocol": "leave-one-cluster-out",
+  "primary_metric": "pr_auc",
+  "graphsage": {
+    "mean_margin_vs_xgb": 0.0359,
+    "folds_win_ge_0.05": 2,
+    "n_folds": 4,
+    "PASS_preregistered": false
+  },
+  "gat": {
+    "mean_margin_vs_xgb": 0.1416,
+    "folds_win_ge_0.05": 3,
+    "n_folds": 4,
+    "PASS_preregistered": true
+  },
+  "interpretation": "If PASS=false, execute the pre-registered honest-null branch: report tabular as competitive and use the graph as a structural lens (hub ranking) validated causally by the ABM."
+}

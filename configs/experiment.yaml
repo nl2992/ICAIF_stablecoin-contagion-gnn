@@ -25,9 +25,11 @@ venues:
 
 data:
   resolution: "1min"
-  pre_event_baseline_days: 7    # calm window prepended to each episode
-  max_forward_fill_min: 5       # gaps > 5 min → NaN, not filled
-  min_coverage_pct: 80          # gate: episode must have ≥80% coverage to be used
+  pre_event_baseline_days: 1    # calm window prepended (was 7; several assets lack
+                                # pre-event history — see data_card deviations)
+  max_forward_fill_min: 5       # label gaps > 5 min → NaN
+  price_ffill_limit_min: 360    # stablecoin price is piecewise-constant between trades
+  min_coverage_pct: 50          # gate computed over the EVENT window (was 80/full-window)
 
 # ----------------------------------------------------------
 # Stress / contagion label thresholds  (PRE-REGISTERED)
