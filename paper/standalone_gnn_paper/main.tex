@@ -203,6 +203,30 @@ initial shock. Onset labels (rather than ``currently stressed'' labels) are esse
 hard question of whether stress will \emph{newly arrive}. We use four horizons: 30 minutes, 1 hour,
 4 hours, and 24 hours. Onset is rare, so the positive rate is low (2.6\% at 30 minutes rising to
 29\% at 24 hours as the window lengthens)---a fact that dictates our choice of metrics below.
+Table~\ref{tab:baserates} gives the rate for every episode and horizon: it is low at short horizons
+(motivating PR-AUC and ROC over accuracy) and varies widely across episodes (motivating cluster-level
+evaluation). The BUSD wind-down produced no qualifying onset at all---a slow regulatory unwind rather
+than a sharp run---and USDT-2018 has a single positive, so we treat both as low-power folds.
+
+\begin{table}[t]
+\caption{Positive (contagion-onset) rate per episode and horizon. Rates are low and highly
+episode-dependent, which dictates the metric and evaluation choices in the main text.}
+\label{tab:baserates}
+\small
+\begin{tabular}{lrrrr}
+\toprule
+Episode & 30\,m & 1\,h & 4\,h & 24\,h \\
+\midrule
+UST / Terra & 0.008 & 0.014 & 0.039 & 0.150 \\
+USDT (May) & 0.012 & 0.021 & 0.052 & 0.196 \\
+DAI / FTX & 0.024 & 0.033 & 0.071 & 0.163 \\
+USDC / SVB & 0.028 & 0.049 & 0.112 & 0.295 \\
+FRAX / SVB & 0.025 & 0.042 & 0.103 & 0.292 \\
+BUSD wind-down & 0.000 & 0.000 & 0.000 & 0.000 \\
+USDT (2018) & 0.010 & 0.010 & 0.010 & 0.010 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \paragraph{Node features.} Each node carries standard market-microstructure signals, each a
 quantity a trading desk would recognise: the price deviation from \$1; realized volatility over 1
@@ -291,21 +315,54 @@ excludes it (leakage-safe) & 0.067 \\
 
 \section{Models}
 We evaluate a \emph{ladder} of models on identical samples, from simplest to most expressive, so
-that any gain can be attributed to the right cause. (1) \emph{Majority} and \emph{persistence}
-baselines establish the no-skill floor. (2) \emph{Logistic regression} and \emph{XGBoost} use each
-node's own features---the strong per-node tabular benchmark. (3) A \emph{GRU} recurrent network
-consumes per-node feature \emph{sequences}, isolating the value of temporal dynamics without the
-graph. (4) \emph{GraphSAGE} and \emph{GAT} consume the temporal graph, isolating the value of the
-network. The GNNs predict onset for every active, non-origin node at each snapshot, and are trained
-with a class-weighted cross-entropy (because positives are rare) and early stopping on a validation
-cluster. Both GNNs use three message-passing layers of width 64; GAT uses four attention heads. We
-train with Adam (learning rate $10^{-3}$), dropout $0.2$, and a positive class weight equal to the
-negative/positive ratio. To control for run-to-run variance from random initialisation we report the
-mean and standard deviation over five seeds throughout. Crucially, every model in the ladder is
-evaluated on \emph{exactly the same} (snapshot, node) samples, so differences reflect the model, not
-the data slice.
+that any gain can be attributed to the right cause. We describe each rung in turn.
+
+\paragraph{Baselines and per-node models.} The \emph{majority} and \emph{persistence} predictors
+establish the no-skill floor. \emph{Logistic regression} and \emph{XGBoost}~\cite{chen2016xgboost}
+operate on each node's own feature vector $\mathbf{x}_{j,t}$ in isolation; they are the strong
+tabular benchmark a graph model must beat. A \emph{GRU} recurrent network consumes the per-node
+feature \emph{sequence} $(\mathbf{x}_{j,t-L},\dots,\mathbf{x}_{j,t})$ and predicts from its final
+hidden state, isolating the value of temporal dynamics \emph{without} the cross-asset graph.
+
+\paragraph{Graph neural networks.} GraphSAGE and GAT consume the full temporal graph. Writing
+$\mathbf{h}_j^{(0)}=\mathbf{x}_{j,t}$ for the snapshot at time $t$ and $\mathcal{N}(j)$ for the in-
+neighbours of $j$, a GraphSAGE layer updates each node by aggregating its neighbours by mean,
+\begin{equation}
+\mathbf{h}_j^{(\ell)}=\sigma\!\Big(\mathbf{W}^{(\ell)}\big[\,\mathbf{h}_j^{(\ell-1)}\;\big\|\;
+\textstyle\frac{1}{|\mathcal{N}(j)|}\sum_{k\in\mathcal{N}(j)}\mathbf{h}_k^{(\ell-1)}\big]\Big),
+\end{equation}
+where $\|$ is concatenation and $\sigma$ a nonlinearity. GAT instead learns an attention weight
+$\alpha_{jk}$ for each edge and forms a \emph{weighted} sum,
+\begin{equation}
+\alpha_{jk}=\frac{\exp\!\big(\mathrm{LeakyReLU}(\mathbf{a}^\top[\mathbf{W}\mathbf{h}_j\,\|\,\mathbf{W}\mathbf{h}_k\,\|\,\mathbf{e}_{jk}])\big)}
+{\sum_{k'\in\mathcal{N}(j)}\exp\!\big(\mathrm{LeakyReLU}(\mathbf{a}^\top[\mathbf{W}\mathbf{h}_j\,\|\,\mathbf{W}\mathbf{h}_{k'}\,\|\,\mathbf{e}_{jk'}])\big)},
+\end{equation}
+\begin{equation}
+\mathbf{h}_j^{(\ell)}=\sigma\!\Big(\textstyle\sum_{k\in\mathcal{N}(j)}\alpha_{jk}\,\mathbf{W}^{(\ell)}\mathbf{h}_k^{(\ell-1)}\Big),
+\end{equation}
+where $\mathbf{e}_{jk}$ is the edge's correlation/lead--lag attribute. The crucial difference is in
+the weights: GraphSAGE averages all neighbours equally, while GAT can concentrate on the few that
+matter. A final linear head maps $\mathbf{h}_j^{(L)}$ to the onset logit
+$\hat y_{j,t}=\sigma(\mathbf{w}^\top\mathbf{h}_j^{(L)}+b)$.
+
+\paragraph{Training.} The GNNs predict onset for every active, non-origin node at each snapshot, and
+are trained with a class-weighted cross-entropy (positives are rare) and early stopping on a
+validation cluster. Both GNNs use three message-passing layers of width 64; GAT uses four attention
+heads. We use Adam (learning rate $10^{-3}$), dropout $0.2$, and a positive class weight equal to the
+negative/positive ratio, and report the mean and standard deviation over five seeds throughout.
+Crucially, every model in the ladder is evaluated on \emph{exactly the same} (snapshot, node)
+samples, so differences reflect the model, not the data slice.
 
 \section{Results}\label{sec:results}
+\paragraph{Experimental setup.} All models see the same (snapshot, node) samples and the same feature
+set; the non-graph models receive each node's flattened feature vector, while the GNNs additionally
+receive the directed graph. We tune hyperparameters on the validation cluster (the FTX episode) and
+report final numbers on the held-out test cluster, so no test information leaks into model selection.
+Tree ensembles use up to 300 estimators with early stopping; the neural models train for up to 150
+epochs with patience-based stopping. We report PR-AUC and ROC-AUC, and---because the positive class is
+rare and its rate varies across horizons---we read skill primarily from ROC-AUC and from PR-AUC lift
+over the base rate.
+
 \paragraph{Choosing the right yardstick.} Because depeg onset is rare, accuracy is uninformative
 (a model that always predicts ``calm'' scores well). We use precision--recall AUC (PR-AUC), which
 focuses on the rare positives. But PR-AUC mechanically rises with the base rate, and our base rate
@@ -370,6 +427,17 @@ GAT (5-seed mean) & \textbf{0.447} & 0.585 & $+0.153$ \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\paragraph{Reading the ladder.} Walking up Table~\ref{tab:full} is instructive. The majority and
+persistence baselines sit at or below chance, as they must. Logistic regression already extracts a
+little signal (lift $+0.06$), confirming that the microstructure features are not pure noise. The
+strong tabular learner, XGBoost, then \emph{loses} that signal at the day horizon---it overfits the
+per-node features and lands below the base rate---while the GRU, which adds temporal but no
+cross-asset information, fares no better. The two graph models are the first to show clear ranking
+skill: GraphSAGE reaches ROC-AUC $0.65$, and GAT delivers the largest precision lift ($+0.153$). The
+pattern is exactly what the contagion hypothesis predicts: skill appears only once a model can see
+\emph{other} venues' stress, and is largest for the model that can weight the few relevant
+neighbours. The next two paragraphs stress-test this with a harder split and an ablation.
 
 \paragraph{The harder test: leave-one-cluster-out.} In LOCO, each cluster is held out in turn---a
 stricter test of generalization to an unseen crisis type. The per-fold margins shrink but stay
@@ -507,95 +575,26 @@ contagion setting: we make leakage control explicit (without it, the headline co
 PR-AUC of $1.0$), and we treat the model's hub ranking as a hypothesis to be \emph{causally tested}
 rather than a finding in itself---the subject of our companion paper.
 
-\section{Limitations}
-We study seven episodes on the cleanly fetchable cross-asset universe of two large exchanges; two
-episodes are too sparse (a single active venue, almost no contagion) to carry signal, and we exclude
-them from the harder analyses. The lead--lag edges can over-credit a thinly traded coin that
-\emph{appears} to ``lead'' merely because of microstructure noise. Short-horizon onset is genuinely
-unpredictable in our data, and we report this rather than hide it. Finally, the hub ranking is
-correlational by construction; establishing whether its hubs are causal is out of scope here and is
-the subject of companion work.
-
-\section{Broader impact and regulatory considerations}
-A contagion predictor is a dual-use tool. Used by a risk desk or a supervisor, an accurate day-ahead
-warning of which stablecoins are about to come under stress is straightforwardly valuable: it buys
-time to add liquidity, pre-position reserves, or communicate with the market before a run becomes
-self-fulfilling. But the same ranking, taken uncritically, carries two risks we want to flag. First,
-a model trained on a handful of past crises may fail silently on a novel one---our honest LOCO and
-short-horizon results are deliberately reported so that users calibrate their trust accordingly, and
-we would caution against treating any single number as a guarantee. Second, and more subtly, a
-\emph{correlational} hub ranking can be actively misleading if it is read as a causal one: a venue
-that merely co-moves with a crisis can top the ranking while being irrelevant to containing it. We
-regard surfacing this distinction---and handing the ranking to an explicit causal test rather than
-acting on it directly---as the responsible way to deploy a predictor of this kind, and it is the
-reason our companion study exists. We release all code and the exact evaluation protocol so that
-claims can be checked rather than taken on faith.
-
-\section{Future work}
-Three extensions follow naturally. First, \emph{scale}: our universe is the cleanly fetchable
-cross-asset set on two exchanges; incorporating decentralized-exchange pools (Curve, Uniswap) and more
-venues would enlarge the graph and let the attention mechanism exploit richer structure, at the cost
-of messier data. Second, \emph{features beyond price}: on-chain signals such as redemption-queue
-depth, reserve-attestation timing, and bridge flows are leading indicators a price-only model cannot
-see, and folding them into the node features is a promising direction. Third, and most important, the
-\emph{prediction-to-causation pipeline} we expose here---exporting a hub ranking and the empirical
-moments under a versioned schema---invites a tighter loop in which the causal validator's verdict is
-fed back to retrain or regularise the predictor toward causally meaningful structure, rather than mere
-co-movement. We see the clean interface between the two studies as the most reusable part of this work.
-
 \section{Conclusion}
 On real multi-venue data, day-scale stablecoin contagion is predictable, and a graph-attention
 network adds real, \emph{edge-borne} signal---an extra $0.10$ in PR-AUC over the same architecture
 without the network---while hour-scale onset is not predictable at all. The method produces an
-interpretable, exportable ranking of systemically central venues. How to act on that ranking
-safely depends on whether its hubs are causal, the question we turn to next.
+interpretable, exportable ranking of systemically central venues, intended for a risk desk or
+supervisor who wants a day-ahead warning of which coins are about to come under stress.
 
-\paragraph{Reproducibility.} Every number above is produced by committed scripts; a single
-\texttt{reproduce.sh} regenerates all datasets, results, figures, and the hub export end-to-end.
-
-\appendix
-\section{Reproducibility details}
-The full pipeline runs from one script:
-\begin{quote}\small\ttfamily
-KMP\_DUPLICATE\_LIB\_OK=TRUE OMP\_NUM\_THREADS=1 \\
-python scripts/build\_real\_dataset.py \\
-python eval/run\_benchmark.py --all-horizons \\
-python eval/robustness\_multiseed.py \\
-python eval/ablation\_graph.py \\
-python interpret/run\_interpret.py --horizon 1440 --kind gat \\
-python scripts/generate\_figures.py
-\end{quote}
-Data are pulled live from the Binance and Coinbase public REST endpoints and cached; the cache makes
-re-runs deterministic. The \texttt{OMP} guard is required because XGBoost and PyTorch otherwise
-contend for OpenMP in the same process. The hub ranking is exported under a versioned schema so the
-companion causal study can consume it without re-running this pipeline.
-
-Table~\ref{tab:baserates} reports the positive (onset) rate for every episode and horizon. Two
-features drive our design choices: the rate is very low at short horizons (motivating PR-AUC over
-accuracy and the lift/ROC reporting), and it varies widely across episodes (motivating
-cluster-level rather than pooled evaluation). The BUSD wind-down produced no qualifying onset events
-at all---a slow regulatory unwind rather than a sharp run---and USDT-2018 has a single positive,
-which is why we treat both as low-power folds.
-
-\begin{table}[t]
-\caption{Positive (contagion-onset) rate per episode and horizon. Rates are low and highly
-episode-dependent, which dictates the metric and evaluation choices in the main text.}
-\label{tab:baserates}
-\small
-\begin{tabular}{lrrrr}
-\toprule
-Episode & 30\,m & 1\,h & 4\,h & 24\,h \\
-\midrule
-UST / Terra & 0.008 & 0.014 & 0.039 & 0.150 \\
-USDT (May) & 0.012 & 0.021 & 0.052 & 0.196 \\
-DAI / FTX & 0.024 & 0.033 & 0.071 & 0.163 \\
-USDC / SVB & 0.028 & 0.049 & 0.112 & 0.295 \\
-FRAX / SVB & 0.025 & 0.042 & 0.103 & 0.292 \\
-BUSD wind-down & 0.000 & 0.000 & 0.000 & 0.000 \\
-USDT (2018) & 0.010 & 0.010 & 0.010 & 0.010 \\
-\bottomrule
-\end{tabular}
-\end{table}
+Two honest caveats bound the claim. We study seven episodes on the cleanly fetchable cross-asset
+universe of two large exchanges, two of which are too sparse to carry signal; and the lead--lag edges
+can over-credit a thinly traded coin that merely \emph{appears} to lead. We report the short-horizon
+negative result and the modest leave-one-cluster-out margins precisely so that the ranking is trusted
+only where it has earned it. Most importantly, the ranking is \emph{correlational} by construction: a
+venue that co-moves with a crisis can top it while being irrelevant to containing the spread.
+Surfacing that distinction---and handing the ranking to an explicit causal test rather than acting on
+it directly---is, we argue, the responsible way to use a predictor of this kind, and it motivates the
+companion study that consumes exactly this export. Promising extensions are to enlarge the graph with
+decentralized-exchange pools and to add on-chain leading indicators (redemption-queue depth,
+reserve-attestation timing) beyond price. All datasets, results, and figures are regenerated
+end-to-end by a single committed script, so every number above can be checked rather than taken on
+faith.
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{references}
