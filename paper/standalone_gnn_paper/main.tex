@@ -1,0 +1,187 @@
+\documentclass[sigconf,nonacm]{acmart}
+%% Overleaf-ready. Standalone GNN-prediction paper (Paper 1 of 2).
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{multirow}
+
+\begin{document}
+
+\title{Predicting Cross-Asset Stablecoin Contagion with Temporal Graph
+Neural Networks}
+
+\author{Anonymous}
+\affiliation{\institution{Columbia University MAFN}\country{USA}}
+
+\begin{abstract}
+We study whether cross-asset stablecoin depeg contagion can be predicted from market
+microstructure, using minute-level Binance and Coinbase data across seven real crisis
+episodes (2022--2023). We frame contagion as per-node onset prediction on a temporal directed
+graph of (asset, venue) nodes and evaluate a full model ladder---baselines, tabular
+(XGBoost), sequential (GRU), and graph (GraphSAGE, GAT)---under a strictly leakage-safe
+protocol in which same-window crises are held out together as clusters. Two findings emerge.
+First, contagion \emph{onset} is unpredictable at horizons of four hours or less (every model
+sits at the base rate) but becomes predictable at \textbf{24 hours}, where graph attention
+(GAT) attains PR-AUC $0.447\pm0.016$ on the held-out SVB cluster, a margin of
+$+0.175\pm0.016$ over XGBoost (5 seeds). Second, an edge ablation isolates \emph{where} the
+signal lives: removing the directed lead-lag edges costs GAT $0.100$ PR-AUC but GraphSAGE only
+$0.009$---the contagion signal is carried by the edges and exploited specifically by attention.
+We close with an interpretable, exportable hub ranking that surfaces the venues central to each
+crisis, intended as the actionable hand-off to downstream risk and policy analysis.
+\end{abstract}
+
+\keywords{stablecoins, financial contagion, temporal graph neural networks, graph attention,
+systemic risk, leakage-safe evaluation}
+
+\maketitle
+
+\section{Introduction}
+Stablecoins are systemically important and explicitly regulated (GENIUS Act, MiCA)
+\cite{genius2025,mica2023}. When one stablecoin depegs, the question for a risk desk or a
+regulator is which \emph{other} venues will follow, and how soon. Decentralized-exchange
+contagion has been modeled with GNNs at the level of liquidity pools and bridge swaps
+\cite{zhou2025bridge}; we ask the cross-asset, cross-venue analogue for stablecoins on the
+deepest centralized venues, where the data is cleanest and the stakes (reserve runs) are
+highest.
+
+Our contributions are: (1) a \textbf{leakage-safe} temporal-GNN contagion predictor on real
+multi-venue data; (2) a \textbf{lead-time} result---contagion is unpredictable at hours but
+predictable at a day---reported with base-rate-free metrics; (3) an \textbf{ablation} that
+isolates the marginal value of the graph structure (and shows it is attention-specific); and
+(4) an interpretable, exportable \textbf{hub ranking} as the actionable output.
+
+\section{Data and task}
+We collect real 1-minute OHLCV from \textbf{Binance} (USDT-quoted: USDC, TUSD, USDP, FRAX,
+BUSD, FDUSD, UST) and \textbf{Coinbase} (USD-quoted: DAI, USDT), peg-adjusting Binance prices by
+the Coinbase USDT/USD mid so a USDT depeg is not masked by the quote currency. Seven episodes
+span UST/Terra, FTX/DAI, the BUSD wind-down, USDC/SVB, FRAX/SVB, and the 2018/2022 USDT events
+(Fig.~\ref{fig:depeg}).
+
+A node is an (asset, venue) pair; a sample is one (hourly snapshot, active non-origin node).
+The label is contagion \emph{onset}: node $j$ enters a new sustained stress period (asset-class
+bps threshold, $\ge 10$ min) within horizon $\Delta$, having been calm at $t$, with the episode
+origin excluded. We evaluate four horizons (30 min, 1 h, 4 h, 24 h).
+
+\paragraph{Leakage control is load-bearing.} FRAX/SVB and USDC/SVB are the \emph{same}
+March-2023 window; splitting them across train and test lets a model memorize the regime and
+inflates XGBoost to PR-AUC $=1.0$. We therefore group same-window episodes into \emph{clusters}
+and evaluate (a) a held-out SVB cluster and (b) leave-one-cluster-out (LOCO). This single design
+choice is what separates an honest result from an artifact.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/01_depeg_paths.png}
+\caption{Real 1-minute peg paths during USDC/SVB (Binance + Coinbase). USDC and peers crash to
+\$0.86--0.95 on 11 March 2023 and recover by the 13th.}
+\label{fig:depeg}
+\end{figure}
+
+\section{Models}
+A model ladder on identical samples: majority and persistence baselines; logistic regression
+and XGBoost~\cite{chen2016xgboost} on per-node features; a GRU on per-node feature sequences;
+and two GNNs on hourly directed snapshots---GraphSAGE~\cite{hamilton2017graphsage} and
+GAT~\cite{velickovic2018gat}. Node features are IAQF-style microstructure signals (price ratio,
+realized vol at 1\,h/24\,h, Amihud illiquidity, Kyle's $\lambda$, OU half-life, log volume) with
+short lags. Edges are formed from a 6-hour rolling directed lead-lag graph; edge attributes carry
+the signed lead-lag and correlation. GNNs predict per-node onset, masked to active non-origin
+nodes, with class-weighted loss and early stopping.
+
+\section{Results}
+\paragraph{Lead-time.} Because PR-AUC rises mechanically with the base rate across horizons, we
+report ROC-AUC (base-rate-free) and PR-AUC lift (Fig.~\ref{fig:leadtime}). At $\le 4$h no model
+clears ROC-AUC $0.5$; at 24 h only the graph models do, GraphSAGE reaching ROC $0.65$. Contagion
+onset is thus a \emph{day-scale} phenomenon in this data: the hour-scale negative result is real
+and scopes the claim.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/02_leadtime.png}
+\caption{Lead-time. Left: ROC-AUC vs horizon---only graph models exceed chance at 24h. Right:
+PR-AUC lift over the base rate. Per-node tabular models hug chance.}
+\label{fig:leadtime}
+\end{figure}
+
+\paragraph{Headline (5 seeds).} On the held-out SVB cluster at 24 h, GAT attains PR-AUC
+$0.447\pm0.016$, a margin of $\mathbf{+0.175\pm0.016}$ over XGBoost, which sits at the base rate
+$0.29$. The margin is stable across seeds (a single unlucky seed gives $0.29$, so multi-seed
+reporting matters). In LOCO the per-fold margins are smaller but positive
+(Fig.~\ref{fig:loco}); dropping the degenerate single-positive USDT-2018 fold leaves GAT
+$+0.083$ over XGBoost.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/03_loeo_bars.png}
+\caption{Leave-one-cluster-out PR-AUC at 24h. Graph models lead the tabular baseline on the
+contagion-bearing folds; the single-positive USDT-2018 fold is a high-variance outlier.}
+\label{fig:loco}
+\end{figure}
+
+\paragraph{Ablation: where the signal lives.} Holding the architecture fixed and removing all
+edges (Table~\ref{tab:ablation}) decomposes the gain over tabular into an \emph{architecture}
+component (node-only XGBoost $0.271 \to$ GNN-no-edges $0.35$--$0.39$) and a \emph{graph}
+component. The directed edges add $\mathbf{+0.100}$ PR-AUC for GAT but only $+0.009$ for
+GraphSAGE: the cross-asset lead-lag structure carries genuine contagion signal, and \emph{graph
+attention} is what exploits it. This directly answers the natural reviewer question---``is it the
+graph or the features?''---and identifies attention over directed edges as the mechanism.
+
+\begin{table}[t]
+\caption{Graph ablation, held-out SVB @ 24h (5 seeds).}
+\label{tab:ablation}
+\begin{tabular}{lrr}
+\toprule
+Rung & PR-AUC & graph contribution \\
+\midrule
+node-only (XGBoost) & 0.271 & --- \\
+GraphSAGE, no edges & 0.392 & \multirow{2}{*}{$+0.009$} \\
+GraphSAGE, real edges & 0.401 & \\
+GAT, no edges & 0.347 & \multirow{2}{*}{$\mathbf{+0.100}$} \\
+GAT, real edges & \textbf{0.447} & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Interpretation and the hub ranking}
+The strongest microstructure precursors (XGBoost gain; Fig.~\ref{fig:features}) are the OU
+half-life and 24-hour realized volatility---mean-reversion speed and recent turbulence, not the
+price level. We combine GNN occlusion-influence (a perturbation-based, version-robust alternative
+to GNNExplainer masks~\cite{ying2019gnnexplainer}), graph betweenness, and a \emph{non-circular}
+propagator label computed from raw prices, into an exportable per-episode hub ranking
+(Fig.~\ref{fig:hubmap}). For USDC/SVB the top hub is BUSD (highest betweenness and influence).
+We deliberately stop at \emph{ranking}: whether a high-ranked hub is \emph{causally} responsible
+for contagion---and the policy consequences of acting on a correlational ranking---is the subject
+of a companion causal-validation study that consumes exactly this exported ranking.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/04_features.png}
+\caption{Microstructure precursors of contagion onset (XGBoost gain, summed over lags).}
+\label{fig:features}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/05_hub_map.png}
+\caption{Exported hub map for USDC/SVB: betweenness vs GNN occlusion-influence, with the origin
+(USDC) marked. The top-ranked hub is the actionable output handed to causal analysis.}
+\label{fig:hubmap}
+\end{figure}
+
+\section{Limitations}
+$n=7$ episodes on the cleanly fetchable cross-asset CEX universe; two are too thin to carry
+signal. The lead-lag edges can over-credit thinly traded coins. Short-horizon contagion is
+genuinely unpredictable here. The hub ranking is correlational by construction---its causal
+status is out of scope here and addressed in companion work.
+
+\section{Conclusion}
+On real multi-venue data, day-scale stablecoin contagion is predictable and graph attention adds
+real, edge-borne signal ($+0.10$ PR-AUC over the same architecture without edges), while
+hour-scale onset is not. The method yields an interpretable, exportable hub ranking; how to act
+on it safely requires asking whether its hubs are causal, which we take up next.
+
+\paragraph{Reproducibility.} Every number is produced by committed scripts; \texttt{reproduce.sh}
+regenerates all results, figures, and the hub export end-to-end.
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references}
+
+\end{document}
