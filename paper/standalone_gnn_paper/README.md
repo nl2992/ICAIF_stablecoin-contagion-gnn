@@ -1,6 +1,14 @@
-# Paper 1 (standalone): GNN stablecoin-contagion prediction
+# Paper 1: Predicting Cross-Asset Stablecoin Contagion with Temporal GNNs
 
-ACM `sigconf` (`nonacm` draft mode). Self-contained: `main.tex` + `figures/` + `references.bib`.
-Build on Overleaf (upload this folder) or `pdflatex main.tex && bibtex main && pdflatex main.tex` x2.
-Every number is reproduced by `../../stablecoin-contagion-gnn/reproduce.sh`.
-Companion: the ABM causal-validation paper (Paper 2) consumes this paper's exported hub ranking.
+**Compiled PDF: `main.pdf`** (built locally with TeX Live 2026 / `acmart`, 0 errors).
+
+Self-contained: `main.tex` + `figures/` + `references.bib`. ACM `sigconf` (`nonacm` draft mode).
+
+## Build
+```bash
+pdflatex main.tex && bibtex main && pdflatex main.tex && pdflatex main.tex
+```
+or upload this folder to Overleaf.
+
+Every number is reproduced by `../../reproduce.sh`. The exported hub ranking is the input to the
+companion causal-validation paper (`stablecoin-abm/paper/standalone_abm_paper/`).

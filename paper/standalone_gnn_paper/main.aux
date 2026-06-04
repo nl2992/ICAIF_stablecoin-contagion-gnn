@@ -1,0 +1,69 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\citation{genius2025,mica2023}
+\citation{zhou2025bridge}
+\citation{hamilton2017graphsage}
+\citation{velickovic2018gat}
+\citation{zhou2025bridge}
+\citation{chen2016xgboost}
+\@writefile{toc}{\contentsline {section}{Abstract}{1}{section*.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.1}What is a stablecoin, and what is a depeg?}{1}{subsection.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.2}A concrete example: the SVB weekend}{1}{subsection.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.3}The prediction problem and our contributions}{1}{subsection.1.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}Background and related work}{1}{section.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Graph neural networks in one paragraph.}{1}{section*.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Prior work.}{1}{section*.6}\protected@file@percent }
+\citation{chen2016xgboost}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Real 1-minute prices during the USDC/SVB crisis (Binance and Coinbase). USDC and several peers fall to \$0.86--0.95 on 11 March 2023 and recover by the 13th. The spread of the drop across \emph  {different} coins is the contagion this paper predicts.}}{2}{figure.caption.4}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:depeg}{{1}{2}{Real 1-minute prices during the USDC/SVB crisis (Binance and Coinbase). USDC and several peers fall to \$0.86--0.95 on 11 March 2023 and recover by the 13th. The spread of the drop across \emph {different} coins is the contagion this paper predicts}{figure.caption.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Data and task formulation}{2}{section.3}\protected@file@percent }
+\newlabel{sec:data}{{3}{2}{Data and task formulation}{section.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{Data.}{2}{section*.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Nodes, samples, and labels.}{2}{section*.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Why leakage control is the crux.}{2}{section*.9}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Lead-time. \emph  {Left:} ranking skill (ROC-AUC) versus horizon---only the graph models beat chance ($0.5$, dashed) at 24h. \emph  {Right:} precision lift over the base rate. Per-node tabular models stay near zero skill.}}{2}{figure.caption.12}\protected@file@percent }
+\newlabel{fig:leadtime}{{2}{2}{Lead-time. \emph {Left:} ranking skill (ROC-AUC) versus horizon---only the graph models beat chance ($0.5$, dashed) at 24h. \emph {Right:} precision lift over the base rate. Per-node tabular models stay near zero skill}{figure.caption.12}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Models}{2}{section.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Results}{2}{section.5}\protected@file@percent }
+\newlabel{sec:results}{{5}{2}{Results}{section.5}{}}
+\@writefile{toc}{\contentsline {paragraph}{The right yardstick.}{2}{section*.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Lead-time.}{2}{section*.11}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Headline (averaged over five seeds).}{2}{section*.13}\protected@file@percent }
+\citation{ying2019gnnexplainer}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Leave-one-cluster-out PR-AUC at 24h. Graph models (GAT in dark red) lead the tabular baseline on the contagion-bearing folds; the single-positive USDT-2018 fold is a high-variance outlier we report but do not lean on.}}{3}{figure.caption.14}\protected@file@percent }
+\newlabel{fig:loco}{{3}{3}{Leave-one-cluster-out PR-AUC at 24h. Graph models (GAT in dark red) lead the tabular baseline on the contagion-bearing folds; the single-positive USDT-2018 fold is a high-variance outlier we report but do not lean on}{figure.caption.14}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Graph ablation, held-out SVB cluster @ 24h, mean of 5 seeds. ``Graph contribution'' is real-edges minus no-edges, holding the architecture fixed.}}{3}{table.caption.16}\protected@file@percent }
+\newlabel{tab:ablation}{{1}{3}{Graph ablation, held-out SVB cluster @ 24h, mean of 5 seeds. ``Graph contribution'' is real-edges minus no-edges, holding the architecture fixed}{table.caption.16}{}}
+\@writefile{toc}{\contentsline {paragraph}{Ablation: is it the graph or the model?}{3}{section*.15}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Which signals predict contagion onset (XGBoost gain, summed over lags). Mean-reversion speed and recent volatility dominate.}}{3}{figure.caption.17}\protected@file@percent }
+\newlabel{fig:features}{{4}{3}{Which signals predict contagion onset (XGBoost gain, summed over lags). Mean-reversion speed and recent volatility dominate}{figure.caption.17}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Interpretation and the exported hub ranking}{3}{section.6}\protected@file@percent }
+\newlabel{sec:interp}{{6}{3}{Interpretation and the exported hub ranking}{section.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {7}Limitations}{3}{section.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {8}Conclusion}{3}{section.8}\protected@file@percent }
+\bibstyle{ACM-Reference-Format}
+\bibdata{references}
+\bibcite{chen2016xgboost}{{1}{2016}{{Chen and Guestrin}}{{}}}
+\bibcite{mica2023}{{2}{2023}{{European Parliament and Council}}{{}}}
+\bibcite{hamilton2017graphsage}{{3}{2017}{{Hamilton et~al\mbox  {.}}}{{}}}
+\bibcite{genius2025}{{4}{2025}{{U.S. Congress}}{{}}}
+\bibcite{velickovic2018gat}{{5}{2018}{{Veli{\v c}kovi{\'c} et~al\mbox  {.}}}{{}}}
+\bibcite{ying2019gnnexplainer}{{6}{2019}{{Ying et~al\mbox  {.}}}{{}}}
+\bibcite{zhou2025bridge}{{7}{2025}{{Zhou et~al\mbox  {.}}}{{}}}
+\newlabel{tocindent-1}{0pt}
+\newlabel{tocindent0}{0pt}
+\newlabel{tocindent1}{4.185pt}
+\newlabel{tocindent2}{10.34999pt}
+\newlabel{tocindent3}{0pt}
+\newlabel{tocindent4}{0pt}
+\newlabel{tocindent5}{0pt}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Exported hub map for USDC/SVB: graph betweenness (x) versus GNN influence (y), with the origin (USDC) marked separately. The top-ranked hub is the actionable output handed to causal analysis.}}{4}{figure.caption.18}\protected@file@percent }
+\newlabel{fig:hubmap}{{5}{4}{Exported hub map for USDC/SVB: graph betweenness (x) versus GNN influence (y), with the origin (USDC) marked separately. The top-ranked hub is the actionable output handed to causal analysis}{figure.caption.18}{}}
+\@writefile{toc}{\contentsline {paragraph}{Reproducibility.}{4}{section*.19}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{References}{4}{section*.21}\protected@file@percent }
+\newlabel{TotPages}{{4}{4}{}{page.4}{}}
+\gdef \@abspage@last{4}
