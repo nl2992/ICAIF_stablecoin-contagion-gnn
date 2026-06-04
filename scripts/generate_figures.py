@@ -32,27 +32,38 @@ COL = {"majority": "#999999", "xgboost": "#2166ac", "logreg": "#67a9cf",
 
 
 def fig_leadtime():
-    series = {}
+    """Two-panel lead-time: ROC-AUC (base-rate-free) and PR-AUC lift over base rate.
+    Absolute PR-AUC rises mechanically with the base rate, so these honest metrics are
+    used instead of raw PR-AUC."""
+    roc, lift = {}, {}
     for h in HORIZONS:
         p = Path(f"results/ladder/pooled_results_h{h}.csv")
         if not p.exists():
             continue
         df = pd.read_csv(p, index_col=0)
+        base = float(df["positive_rate"].iloc[0])
         for m in df.index:
-            series.setdefault(m, []).append((h, df.loc[m, "pr_auc"]))
-    fig, ax = plt.subplots(figsize=(7, 4.5))
-    for m in ["majority", "xgboost", "logreg", "gru", "graphsage", "gat"]:
-        if m not in series:
-            continue
-        xs, ys = zip(*series[m])
-        lw = 2.5 if m in ("gat", "graphsage") else 1.4
-        ax.plot(xs, ys, marker="o", color=COL.get(m, "k"), lw=lw,
-                label=m.upper() if m in ("gat", "gru") else m.capitalize(),
-                markersize=7 if m in ("gat", "graphsage") else 5)
-    ax.set_xscale("log"); ax.set_xticks(HORIZONS); ax.set_xticklabels(HLAB)
-    ax.set_xlabel("Contagion prediction horizon"); ax.set_ylabel("PR-AUC (held-out SVB)")
-    ax.set_title("Lead-time decay: graph attention wins at the 24h horizon")
-    ax.legend(fontsize=8, ncol=2); ax.grid(alpha=0.3)
+            roc.setdefault(m, []).append((h, df.loc[m, "roc_auc"]))
+            lift.setdefault(m, []).append((h, df.loc[m, "pr_auc"] - base))
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4.6))
+    for ax, data, ylab, ttl, ref in [
+        (axes[0], roc, "ROC-AUC (held-out SVB)", "Ranking skill vs horizon", 0.5),
+        (axes[1], lift, "PR-AUC lift over base rate", "Precision lift vs horizon", 0.0)]:
+        for m in ["xgboost", "logreg", "gru", "graphsage", "gat"]:
+            if m not in data:
+                continue
+            xs, ys = zip(*data[m])
+            lw = 2.6 if m in ("gat", "graphsage") else 1.4
+            ax.plot(xs, ys, marker="o", color=COL.get(m, "k"), lw=lw,
+                    label=m.upper() if m in ("gat", "gru") else m.capitalize(),
+                    markersize=7 if m in ("gat", "graphsage") else 5)
+        ax.axhline(ref, color="k", lw=0.8, ls="--", alpha=0.6)
+        ax.set_xscale("log"); ax.set_xticks(HORIZONS); ax.set_xticklabels(HLAB)
+        ax.set_xlabel("Contagion prediction horizon"); ax.set_ylabel(ylab)
+        ax.set_title(ttl); ax.grid(alpha=0.3)
+    axes[0].legend(fontsize=8, ncol=2)
+    fig.suptitle("Lead-time: graph models are the only ones with skill (ROC>0.5, lift>0) at 24h",
+                 fontsize=11)
     fig.tight_layout(); fig.savefig(OUT / "fig1_leadtime_decay.png", dpi=200); plt.close(fig)
     print("fig1 ok")
 
@@ -98,15 +109,19 @@ def fig_hub():
     df = pd.read_csv(p)
     df = df[df["gnn_mask_sum"] > 0].copy()
     spurious = json.loads(Path("exports/spurious_hub_USDC_SVB.json").read_text()).get("spurious_hub")
+    origin = "USDC/binance"  # the SVB episode origin (excluded from propagator labels)
     fig, ax = plt.subplots(figsize=(7, 5))
     for _, r in df.iterrows():
-        if r["node"] == spurious:
+        if r["node"] == origin:
+            c, mark = "#225ea8", "*"
+        elif r["node"] == spurious:
             c, mark = "#b2182b", "X"
         elif r["propagator_label"] == 1:
             c, mark = "#1a9850", "o"
         else:
             c, mark = "#888888", "s"
-        ax.scatter(r["betweenness"], r["gnn_mask_sum"], s=160, color=c, marker=mark, zorder=3)
+        ax.scatter(r["betweenness"], r["gnn_mask_sum"], s=240 if mark == "*" else 160,
+                   color=c, marker=mark, zorder=3)
         ax.annotate(r["node"].split("/")[0], (r["betweenness"], r["gnn_mask_sum"]),
                     fontsize=8, xytext=(5, 4), textcoords="offset points")
     ax.set_xlabel("Betweenness centrality (structural)")
@@ -114,6 +129,7 @@ def fig_hub():
     ax.set_title("Hub map: BUSD is central+influential but a NON-propagator (spurious)")
     from matplotlib.lines import Line2D
     ax.legend(handles=[
+        Line2D([0], [0], marker="*", color="w", markerfacecolor="#225ea8", label="origin (USDC)", markersize=14),
         Line2D([0], [0], marker="o", color="w", markerfacecolor="#1a9850", label="true propagator", markersize=10),
         Line2D([0], [0], marker="s", color="w", markerfacecolor="#888888", label="non-propagator", markersize=10),
         Line2D([0], [0], marker="X", color="w", markerfacecolor="#b2182b", label="spurious hub", markersize=11),

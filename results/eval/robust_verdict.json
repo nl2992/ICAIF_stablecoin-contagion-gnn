@@ -1,0 +1,27 @@
+{
+  "protocol": "leave-one-cluster-out @ h=1440",
+  "folds_kept": [
+    "FTX_2022",
+    "SVB_2023",
+    "Terra_2022"
+  ],
+  "folds_dropped_low_power": [
+    "BUSD_2023",
+    "USDT_2018"
+  ],
+  "min_positives": 5,
+  "graphsage": {
+    "mean_margin_vs_xgb": 0.0449,
+    "folds_win_ge_0.05": 2,
+    "n_folds": 3,
+    "mean_lift_over_base": 0.0031,
+    "beats_xgb_on_average": true
+  },
+  "gat": {
+    "mean_margin_vs_xgb": 0.0826,
+    "folds_win_ge_0.05": 2,
+    "n_folds": 3,
+    "mean_lift_over_base": 0.0408,
+    "beats_xgb_on_average": true
+  }
+}
