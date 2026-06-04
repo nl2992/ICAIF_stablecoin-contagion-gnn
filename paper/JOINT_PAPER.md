@@ -118,9 +118,26 @@ driver in Terra (1/3) but *diverges* with a spurious hub in SVB (BUSD) and USDT-
 (2/3). Correlational hub rankings are therefore **unreliable** — sometimes right, sometimes
 badly wrong — which is precisely why a causal test is required.
 
-**Robustness.** Under ±30% perturbation of (coupling, κ, W) over 60 draws, USDC stays the top
-causal node **100%** of the time and BUSD stays inert **100%** — the headline is not a
-calibration artifact.
+**Robustness (four independent checks).**
+- *Calibration uncertainty.* Under ±30% perturbation of (coupling, κ, W) over 60 draws, USDC
+  stays the top causal node **100%** of the time and BUSD stays inert **100%**.
+- *Documented-exposure network.* Re-deriving the transmission network from **publicly
+  documented reserve linkages** (DAI/FRAX hold USDC; BUSD/TUSD/USDP independent) rather than
+  estimated lead-lag also calibrates **4/4** and yields the same conclusion — now mechanically
+  grounded: **BUSD's out-exposure is 0** (no stablecoin holds it as backing), so it *cannot*
+  transmit, while USDC's out-exposure is 0.5. BUSD is inert and USDC dominant under **both**
+  the observational and the documented network, so the finding is not an artifact of how the
+  structure is derived.
+- *Placebo control.* On synthetic data with known ground truth (a transmission chain plus a
+  planted spurious co-mover), the knockout assigns causal Δ to the true transmitters and
+  **exactly 0** to the planted co-mover — a distinction correlation centrality cannot make
+  (centrality spread 0.024). The method recovers ground truth.
+- *Adaptive agents (Lucas critique).* Switching on an endogenous adaptive redeemer (panic
+  redemptions accelerate once a coin depegs) amplifies contagion **7.7×**, yet USDC stays the
+  causal driver and BUSD stays inert. The intervention *ranking*, however, **flips**: with
+  static agents reserve-strengthening (79%) beats the circuit breaker (63%), but once
+  redemptions are self-reinforcing the circuit breaker dominates (**95%** vs 30%) by
+  interrupting the feedback loop — static-agent analysis would mis-rank the policies.
 
 ## 8. Part III — Policy: correlational hubs misallocate budget
 
@@ -139,12 +156,16 @@ reduction — independently rediscovering the causal targets and ignoring the sp
 
 ## 9. Limitations
 
-n = 7 episodes; two are too thin (1–3 nodes, ~0 contagion) to analyse causally. The
-transmission matrix W is estimated from 1-min lead-lag, which can over-credit thinly traded
-coins as "leaders," so the load-bearing claim is the **BUSD divergence** (predicted #1,
-causal 0), not the full ranking. The networked-contagion engine is a reduced form for the
-causal analysis; the full AMM agent model remains for microstructure studies. Short-horizon
-contagion is genuinely unpredictable here — an honest negative that scopes the claim.
+n = 7 episodes; two are too thin (1–3 nodes, ~0 contagion) to analyse causally. Lead-lag
+estimation of the transmission network is unreliable under strong common co-movement (we show
+this directly in the placebo control), which is why we corroborate it with a **documented
+balance-sheet exposure network** — and the causal conclusion holds under both. The
+networked-contagion engine is a reduced form (a calibrated structural-contagion model with an
+endogenous adaptive redeemer), not a full strategic-agent ABM; the AMM agent model remains for
+microstructure studies. Short-horizon contagion is genuinely unpredictable here — an honest
+negative that scopes the claim. The load-bearing result is the **BUSD divergence** (predicted
+#1, causal 0), which survives all four robustness checks; the full per-node ranking is sparser
+and noisier.
 
 ## 10. Conclusion
 
