@@ -1,0 +1,10 @@
+node,asset,venue,fee_tier,gnn_mask_sum,betweenness,propagator_label,betweenness_x_prop,norm_gnn,norm_bc,norm_bc_x_prop,hub_score_structural,hub_score_full,hub_score,rank_full,rank_structural,episode_tag,is_real,rank,ci_lo,ci_hi,ci_std
+BUSD/binance,BUSD,binance,,23.403859987854958,0.0,0,0.0,1.0,0.0,0.0,0.0,0.5,0.5,1,5,DAI_FTX,True,1,0.5,0.5,0.5
+DAI/coinbase,DAI,coinbase,,0.0,0.0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,2,5,DAI_FTX,True,2,0.0,0.0,0.0
+FDUSD/binance,FDUSD,binance,,0.0,0.0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,3,5,DAI_FTX,True,3,0.0,0.0,0.0
+FRAX/binance,FRAX,binance,,0.0,0.0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,4,5,DAI_FTX,True,4,0.0,0.0,0.0
+TUSD/binance,TUSD,binance,,0.0,0.0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,5,5,DAI_FTX,True,5,0.0,0.0,0.0
+USDC/binance,USDC,binance,,0.0,0.0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,6,5,DAI_FTX,True,6,0.0,0.0,0.0
+USDP/binance,USDP,binance,,0.0,0.0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,7,5,DAI_FTX,True,7,0.0,0.0,0.0
+USDT/coinbase,USDT,coinbase,,0.0,0.0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,8,5,DAI_FTX,True,8,0.0,0.0,0.0
+UST/binance,UST,binance,,0.0,0.0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,9,5,DAI_FTX,True,9,0.0,0.0,0.0

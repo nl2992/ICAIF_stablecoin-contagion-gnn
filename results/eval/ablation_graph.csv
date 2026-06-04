@@ -1,0 +1,6 @@
+rung,edges,pr_auc_mean,pr_auc_std,base_rate
+node-only (XGBoost),n/a,0.2713,0.0,0.2932
+graphsage (no edges),removed,0.3916,0.031,0.2932
+graphsage (real edges),real,0.4008,0.0569,0.2932
+gat (no edges),removed,0.3465,0.0574,0.2932
+gat (real edges),real,0.4465,0.0138,0.2932

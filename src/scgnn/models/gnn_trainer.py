@@ -33,12 +33,22 @@ class GNNContagionTrainer:
     def __init__(self, kind: str = "graphsage", horizon: int = 60, hidden: int = 64,
                  layers: int = 3, dropout: float = 0.2, lr: float = 1e-3,
                  epochs: int = 100, patience: int = 12, seed: int = 42,
-                 device: str = "cpu"):
+                 device: str = "cpu", ablate_edges: bool = False):
         self.kind = kind; self.horizon = horizon; self.hidden = hidden
         self.layers = layers; self.dropout = dropout; self.lr = lr
         self.epochs = epochs; self.patience = patience; self.seed = seed
         self.device = device; self.model: Optional[torch.nn.Module] = None
         self.in_dim: Optional[int] = None
+        # ablation: drop all edges -> the GNN degenerates to a per-node MLP (no message
+        # passing), isolating the marginal contribution of the GRAPH structure.
+        self.ablate_edges = ablate_edges
+
+    def _maybe_ablate(self, d):
+        if self.ablate_edges:
+            d.edge_index = torch.zeros((2, 0), dtype=torch.long, device=d.x.device)
+            d.edge_attr = torch.zeros((0, d.edge_attr.shape[1]), dtype=torch.float32,
+                                      device=d.x.device)
+        return d
 
     def _episode_data(self, names: List[str]) -> List:
         data = []
@@ -47,7 +57,7 @@ class GNNContagionTrainer:
             for _, d in to_pyg_snapshots(b, self.horizon):
                 if d.eval_mask.sum() == 0:
                     continue
-                data.append(d.to(self.device))
+                data.append(self._maybe_ablate(d.to(self.device)))
         return data
 
     def fit(self, train_names: List[str], val_names: Optional[List[str]] = None) -> "GNNContagionTrainer":
@@ -108,6 +118,7 @@ class GNNContagionTrainer:
             b = load_episode(name)
             node_strs = b["node_strs"]; origin = b["origin"]; active = b["active"]
             for si, d in to_pyg_snapshots(b, self.horizon):
+                d = self._maybe_ablate(d)
                 logits = self.model(d.x, d.edge_index, d.edge_attr).squeeze(-1)
                 p = torch.sigmoid(logits).cpu().numpy()
                 for j in range(len(node_strs)):

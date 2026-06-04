@@ -1,0 +1,5 @@
+{
+  "episode": "BUSD_winddown",
+  "spurious_hub": null,
+  "rationale": "No central non-propagator found; all central nodes propagated."
+}

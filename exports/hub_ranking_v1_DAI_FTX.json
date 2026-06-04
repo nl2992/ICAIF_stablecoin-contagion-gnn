@@ -1,0 +1,86 @@
+{
+  "schema_version": "1",
+  "episode_tag": "DAI_FTX",
+  "n_nodes": 9,
+  "alpha": 0.5,
+  "columns": [
+    "node",
+    "asset",
+    "venue",
+    "fee_tier",
+    "gnn_mask_sum",
+    "betweenness",
+    "propagator_label",
+    "betweenness_x_prop",
+    "norm_gnn",
+    "norm_bc",
+    "norm_bc_x_prop",
+    "hub_score_structural",
+    "hub_score_full",
+    "hub_score",
+    "rank_full",
+    "rank_structural",
+    "episode_tag",
+    "is_real",
+    "rank",
+    "ci_lo",
+    "ci_hi",
+    "ci_std"
+  ],
+  "structural_vs_full_rho": NaN,
+  "gnn_adds_beyond_topology": false,
+  "top5_hubs_full": [
+    {
+      "node": "BUSD/binance",
+      "hub_score_full": 0.5,
+      "rank_full": 1
+    },
+    {
+      "node": "DAI/coinbase",
+      "hub_score_full": 0.0,
+      "rank_full": 2
+    },
+    {
+      "node": "FDUSD/binance",
+      "hub_score_full": 0.0,
+      "rank_full": 3
+    },
+    {
+      "node": "FRAX/binance",
+      "hub_score_full": 0.0,
+      "rank_full": 4
+    },
+    {
+      "node": "TUSD/binance",
+      "hub_score_full": 0.0,
+      "rank_full": 5
+    }
+  ],
+  "top5_hubs_structural": [
+    {
+      "node": "BUSD/binance",
+      "hub_score_structural": 0.0,
+      "rank_structural": 5
+    },
+    {
+      "node": "DAI/coinbase",
+      "hub_score_structural": 0.0,
+      "rank_structural": 5
+    },
+    {
+      "node": "FDUSD/binance",
+      "hub_score_structural": 0.0,
+      "rank_structural": 5
+    },
+    {
+      "node": "FRAX/binance",
+      "hub_score_structural": 0.0,
+      "rank_structural": 5
+    },
+    {
+      "node": "TUSD/binance",
+      "hub_score_structural": 0.0,
+      "rank_structural": 5
+    }
+  ]
+}
