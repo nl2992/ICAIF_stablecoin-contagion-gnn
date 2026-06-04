@@ -36,3 +36,6 @@ htmlcov/
 .coverage
 coverage.xml
 *.ipynb_checkpoints/
+
+# obsolete synthetic arrays (real data lives in data/processed/tabular and graphs)
+data/processed/*.npy
