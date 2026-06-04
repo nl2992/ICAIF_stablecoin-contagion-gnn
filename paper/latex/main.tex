@@ -42,7 +42,8 @@ causal inference, explainable AI, systemic risk}
 \maketitle
 
 \section{Introduction}
-Stablecoins are now systemic: the GENIUS Act (US) and MiCA (EU) both make reserve adequacy and
+Stablecoins are now systemic: the GENIUS Act (US)~\cite{genius2025} and MiCA (EU)~\cite{mica2023}
+both make reserve adequacy and
 contagion containment central. A natural analytics pipeline trains a GNN on the cross-asset
 network and reports the hubs that drive depeg propagation. But GNN hub scores are
 \emph{correlational}: betweenness centrality and learned attention reward nodes that move
@@ -61,13 +62,17 @@ correlational hubs misallocate intervention budget, shown by an intervention swe
 forecasting test, and a PPO regulator that rediscovers the causal targets.
 
 \section{Related Work}
-\emph{GNNs for on-chain contagion} (e.g.\ ICAIF'25 Uniswap-v3 bridge-swap link prediction)
-build temporal directed graphs of pools/venues and predict propagation, but evaluate
-\emph{prediction}, not causal hub importance. \emph{Agent-based models of crypto/LOB markets}
-(ICAIF'24 liquidity-spoofing; JaxMARL-HFT) note that ABMs are hard to calibrate and use them for
-mechanism and policy. \emph{Intrinsic interpretability / XAI} (ProtoHedge; critiques of post-hoc
-explanation) motivate causal, not merely attributive, explanations. We connect these: a GNN
-predicts, a contagion model causally validates, and the disagreement is the finding.
+\emph{GNNs for on-chain contagion} (e.g.\ ICAIF'25 Uniswap-v3 bridge-swap link
+prediction~\cite{zhou2025bridge}) build temporal directed graphs of pools/venues and predict
+propagation, but evaluate \emph{prediction}, not causal hub importance. \emph{Agent-based models
+of crypto/LOB markets} (ICAIF'24 liquidity-spoofing~\cite{gu2024spoofability};
+JaxMARL-HFT~\cite{mohl2025jaxmarl}) note that ABMs are hard to calibrate and use them for
+mechanism and policy; continuous-time RL has likewise been applied to financial
+control~\cite{huang2025ctrl}. \emph{Intrinsic interpretability / XAI}
+(ProtoHedge~\cite{faloughi2025protohedge}; critiques of post-hoc explanation) motivate causal,
+not merely attributive, explanations. Our contagion model draws on network-propagation measures
+of systemic risk~\cite{battiston2012debtrank}. We connect these: a GNN predicts, a contagion
+model causally validates, and the disagreement is the finding.
 
 \section{Data}
 We use real 1-minute OHLCV from \textbf{Binance} (USDT-quoted: USDC, TUSD, USDP, FRAX, BUSD,
@@ -89,9 +94,10 @@ USDC/SVB paths.
 \end{figure}
 
 \section{Part I: Predicting Contagion (GNN)}
-We run a model ladder---majority, persistence, logistic regression, XGBoost, a GRU, GraphSAGE,
-and GAT---on identical samples, with a leakage-safe held-out SVB cluster and leave-one-cluster-out
-(LOCO).
+We run a model ladder---majority, persistence, logistic regression,
+XGBoost~\cite{chen2016xgboost}, a GRU, GraphSAGE~\cite{hamilton2017graphsage}, and
+GAT~\cite{velickovic2018gat}---on identical samples, with a leakage-safe held-out SVB cluster and
+leave-one-cluster-out (LOCO).
 
 \paragraph{Lead-time.} Contagion onset is unpredictable at horizons $\le 4$h (every model
 $\approx$ base rate) but predictable at \textbf{24h}. Because PR-AUC rises mechanically with the
@@ -152,8 +158,9 @@ non-propagator (origin USDC marked separately).}
 \section{Part II: Causal Validation}
 An AMM-only market is \emph{bimodal} (it resists a shock or collapses), so it cannot smoothly
 reach a $\sim14\%$ depeg and fails the calibration gate. We use a \textbf{networked-contagion
-model}: per-asset near-critical mean-reverting peg dynamics with a directed transmission matrix
-$W$ and an origin-driven panic channel,
+model} in the spirit of network-propagation systemic-risk
+measures~\cite{battiston2012debtrank}: per-asset near-critical mean-reverting peg dynamics with a
+directed transmission matrix $W$ and an origin-driven panic channel,
 \begin{equation}
 d_i(t{+}1) = (1{-}\kappa)d_i(t) + c\!\sum_j W_{ij}\,\mathrm{stress}(d_j(t)) + s_i(t) + \pi|d_o(t)| + \varepsilon,
 \end{equation}
@@ -210,11 +217,13 @@ systemic exposure---no stablecoin's peg depends on it.}
 \section{Robustness}
 Four independent checks. (1) \textbf{Calibration uncertainty}: under $\pm30\%$ perturbation of
 $(c,\kappa,W)$ over 60 draws, USDC is the top causal node $100\%$ of the time and BUSD stays inert
-$100\%$. (2) \textbf{Adaptive agents}: switching on an endogenous adaptive redeemer (redemptions
-accelerate past a threshold) amplifies contagion $7.7\times$, yet the causal conclusions are
-unchanged---a Lucas-critique check. Notably the \emph{intervention} ranking flips: a circuit
-breaker overtakes reserve-strengthening ($95\%$ vs $30\%$) once runs are self-reinforcing, so
-static-agent analysis would mis-rank policies. (3) \textbf{Structure derivation}: exposure-based
+$100\%$. (2) \textbf{Strategic agents}: we add an endogenous adaptive redeemer (redemptions accelerate
+past a threshold, destabilising) and a capital-capped arbitrageur (a peg-restoring force subject
+to limits-to-arbitrage, stabilising). The redeemer amplifies contagion $7.7\times$ and the
+arbitrageur damps it, but across all four agent configurations the origin stays the top causal
+node and BUSD stays inert---a Lucas-critique check the conclusions pass. Notably the
+\emph{intervention} ranking flips: a circuit breaker overtakes reserve-strengthening ($95\%$ vs
+$30\%$) once runs are self-reinforcing, so static-agent analysis would mis-rank policies. (3) \textbf{Structure derivation}: exposure-based
 and lead-lag-based networks agree on the marquee result. (4) \textbf{Placebo control}: on
 synthetic data with known ground truth, the knockout assigns causal $\Delta=0.139$ to true
 transmitters and \emph{exactly zero} to a planted spurious co-mover that correlation centrality
@@ -270,6 +279,10 @@ contain the cascade. For reserve-transparency and intervention design under the 
 MiCA, contagion analytics should report \emph{causation}, validated---not correlation alone.
 
 \paragraph{Reproducibility.} All numbers come from committed, scripted runs in the two
-repositories; see each repo's \texttt{RESULTS.md} and the command list therein.
+repositories; each repo's \texttt{reproduce.sh} regenerates every result and figure end-to-end
+(see also \texttt{RESULTS.md}).
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references}
 
 \end{document}
