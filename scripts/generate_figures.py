@@ -21,14 +21,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+import paper_style as ps
+ps.apply()
+
 _ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_ROOT / "src"))
 
 OUT = Path("results/figures"); OUT.mkdir(parents=True, exist_ok=True)
 HORIZONS = [30, 60, 240, 1440]
 HLAB = ["30m", "1h", "4h", "24h"]
-COL = {"majority": "#999999", "xgboost": "#2166ac", "logreg": "#67a9cf",
-       "gru": "#f4a582", "graphsage": "#d6604d", "gat": "#b2182b", "persistence": "#cccccc"}
+COL = ps.LADDER
 
 
 def fig_leadtime():
@@ -45,10 +47,10 @@ def fig_leadtime():
         for m in df.index:
             roc.setdefault(m, []).append((h, df.loc[m, "roc_auc"]))
             lift.setdefault(m, []).append((h, df.loc[m, "pr_auc"] - base))
-    fig, axes = plt.subplots(1, 2, figsize=(12, 4.6))
+    fig, axes = plt.subplots(1, 2, figsize=ps.WIDE)
     for ax, data, ylab, ttl, ref in [
-        (axes[0], roc, "ROC-AUC (held-out SVB)", "Ranking skill vs horizon", 0.5),
-        (axes[1], lift, "PR-AUC lift over base rate", "Precision lift vs horizon", 0.0)]:
+        (axes[0], roc, "ROC-AUC (held-out SVB)", "Ranking skill by horizon", 0.5),
+        (axes[1], lift, "PR-AUC lift over base rate", "Precision lift by horizon", 0.0)]:
         for m in ["xgboost", "logreg", "gru", "graphsage", "gat"]:
             if m not in data:
                 continue
@@ -62,9 +64,9 @@ def fig_leadtime():
         ax.set_xlabel("Contagion prediction horizon"); ax.set_ylabel(ylab)
         ax.set_title(ttl); ax.grid(alpha=0.3)
     axes[0].legend(fontsize=8, ncol=2)
-    fig.suptitle("Lead-time: graph models are the only ones with skill (ROC>0.5, lift>0) at 24h",
-                 fontsize=11)
-    fig.tight_layout(); fig.savefig(OUT / "fig1_leadtime_decay.png", dpi=200); plt.close(fig)
+    fig.suptitle("Contagion becomes predictable only at the one-day horizon",
+                 fontsize=12, fontweight="bold")
+    fig.tight_layout(); fig.savefig(OUT / "fig1_leadtime_decay.png"); plt.close(fig)
     print("fig1 ok")
 
 
@@ -77,15 +79,15 @@ def fig_loeo():
     models = [m for m in ["xgboost", "logreg", "gru", "graphsage", "gat"] if m in df.columns]
     folds = df.index.tolist()
     x = np.arange(len(folds)); w = 0.8 / len(models)
-    fig, ax = plt.subplots(figsize=(9, 4.5))
+    fig, ax = plt.subplots(figsize=ps.WIDE)
     for i, m in enumerate(models):
         ax.bar(x + i * w, df[m].values, w, label=m.upper() if m == "gat" else m, color=COL.get(m, "k"))
     if "pos_rate" in df.columns:
         ax.plot(x + 0.4, df["pos_rate"].values, "k--", marker="x", label="base rate")
     ax.set_xticks(x + 0.4); ax.set_xticklabels(folds, rotation=20, ha="right", fontsize=8)
-    ax.set_ylabel("PR-AUC"); ax.set_title("Leave-one-cluster-out @ 24h — GAT leads (pre-registered PASS)")
-    ax.legend(fontsize=8, ncol=3); ax.grid(axis="y", alpha=0.3)
-    fig.tight_layout(); fig.savefig(OUT / "fig2_loeo_bars.png", dpi=200); plt.close(fig)
+    ax.set_ylabel("PR-AUC"); ax.set_title("Leave-one-cluster-out PR-AUC at 24 hours")
+    ax.legend(fontsize=8, ncol=3); ax.grid(axis="y", alpha=0.25)
+    fig.tight_layout(); fig.savefig(OUT / "fig2_loeo_bars.png"); plt.close(fig)
     print("fig2 ok")
 
 
@@ -94,11 +96,11 @@ def fig_features():
     if not p.exists():
         return
     s = pd.read_csv(p, index_col=0).iloc[:, 0].sort_values()
-    fig, ax = plt.subplots(figsize=(6.5, 4))
-    ax.barh(s.index, s.values, color="#2166ac")
+    fig, ax = plt.subplots(figsize=ps.SINGLE)
+    ax.barh(s.index, s.values, color=ps.BLUE)
     ax.set_xlabel("XGBoost gain (summed over lags)")
     ax.set_title("Microstructure precursors of contagion onset")
-    fig.tight_layout(); fig.savefig(OUT / "fig3_feature_importance.png", dpi=200); plt.close(fig)
+    fig.tight_layout(); fig.savefig(OUT / "fig3_feature_importance.png"); plt.close(fig)
     print("fig3 ok")
 
 
@@ -110,32 +112,32 @@ def fig_hub():
     df = df[df["gnn_mask_sum"] > 0].copy()
     spurious = json.loads(Path("exports/spurious_hub_USDC_SVB.json").read_text()).get("spurious_hub")
     origin = "USDC/binance"  # the SVB episode origin (excluded from propagator labels)
-    fig, ax = plt.subplots(figsize=(7, 5))
+    fig, ax = plt.subplots(figsize=ps.TALL)
     for _, r in df.iterrows():
         if r["node"] == origin:
-            c, mark = "#225ea8", "*"
+            c, mark = ps.BLUE, "*"
         elif r["node"] == spurious:
-            c, mark = "#b2182b", "X"
+            c, mark = ps.RED, "X"
         elif r["propagator_label"] == 1:
-            c, mark = "#1a9850", "o"
+            c, mark = ps.GREEN, "o"
         else:
-            c, mark = "#888888", "s"
+            c, mark = ps.GREY, "s"
         ax.scatter(r["betweenness"], r["gnn_mask_sum"], s=240 if mark == "*" else 160,
                    color=c, marker=mark, zorder=3)
         ax.annotate(r["node"].split("/")[0], (r["betweenness"], r["gnn_mask_sum"]),
                     fontsize=8, xytext=(5, 4), textcoords="offset points")
     ax.set_xlabel("Betweenness centrality (structural)")
     ax.set_ylabel("GNN occlusion influence (predictive)")
-    ax.set_title("Hub map: BUSD is central+influential but a NON-propagator (spurious)")
+    ax.set_title("Hub map: BUSD is central and influential but does not propagate")
     from matplotlib.lines import Line2D
     ax.legend(handles=[
-        Line2D([0], [0], marker="*", color="w", markerfacecolor="#225ea8", label="origin (USDC)", markersize=14),
-        Line2D([0], [0], marker="o", color="w", markerfacecolor="#1a9850", label="true propagator", markersize=10),
-        Line2D([0], [0], marker="s", color="w", markerfacecolor="#888888", label="non-propagator", markersize=10),
-        Line2D([0], [0], marker="X", color="w", markerfacecolor="#b2182b", label="spurious hub", markersize=11),
+        Line2D([0], [0], marker="*", color="w", markerfacecolor=ps.BLUE, label="origin (USDC)", markersize=14),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor=ps.GREEN, label="true propagator", markersize=10),
+        Line2D([0], [0], marker="s", color="w", markerfacecolor=ps.GREY, label="non-propagator", markersize=10),
+        Line2D([0], [0], marker="X", color="w", markerfacecolor=ps.RED, label="spurious hub", markersize=11),
     ], fontsize=8)
-    ax.grid(alpha=0.3)
-    fig.tight_layout(); fig.savefig(OUT / "fig4_hub_ranking.png", dpi=200); plt.close(fig)
+    ax.grid(alpha=0.25)
+    fig.tight_layout(); fig.savefig(OUT / "fig4_hub_ranking.png"); plt.close(fig)
     print("fig4 ok")
 
 
@@ -143,15 +145,15 @@ def fig_depeg():
     from scgnn.data.dataset import load_episode
     b = load_episode("USDC_SVB")
     idx = pd.to_datetime(b["index_1m_ms"], unit="ms", utc=True)
-    fig, ax = plt.subplots(figsize=(9, 4.5))
+    fig, ax = plt.subplots(figsize=ps.WIDE)
     for ns in b["active_node_strs"]:
         price = b["dev_bps_1m"][ns] / 1e4 + 1.0
-        ax.plot(idx, price, lw=1.6 if ns == b["origin"] else 1.0,
+        ax.plot(idx, price, lw=2.0 if ns == b["origin"] else 1.1,
                 label=ns.split("/")[0] + (" (origin)" if ns == b["origin"] else ""))
     ax.axhline(1.0, color="k", lw=0.5, ls=":")
-    ax.set_ylabel("price (USD)"); ax.set_title("USDC/SVB episode — real 1-min peg paths (Binance+Coinbase)")
-    ax.legend(fontsize=8, ncol=3); ax.grid(alpha=0.3)
-    fig.tight_layout(); fig.savefig(OUT / "fig5_depeg_paths.png", dpi=200); plt.close(fig)
+    ax.set_ylabel("price (USD)"); ax.set_title("USDC/SVB: real one-minute peg paths (Binance and Coinbase)")
+    ax.legend(fontsize=8, ncol=3); ax.grid(alpha=0.25)
+    fig.tight_layout(); fig.savefig(OUT / "fig5_depeg_paths.png"); plt.close(fig)
     print("fig5 ok")
 
 

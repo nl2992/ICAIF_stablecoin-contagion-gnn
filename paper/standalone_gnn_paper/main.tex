@@ -6,9 +6,11 @@
 \let\Bbbk\relax
 \usepackage{amssymb}
 \usepackage{multirow}
+\usepackage{microtype}
 \settopmatter{printacmref=false}
 \renewcommand\footnotetextcopyrightpermission[1]{}
 \pagestyle{plain}
+\setlength{\emergencystretch}{2.2em}
 
 \begin{document}
 
@@ -19,21 +21,21 @@ Neural Networks}
 \affiliation{\institution{Columbia University, MAFN}\city{New York}\country{USA}}
 
 \begin{abstract}
-On 10 March 2023, the stablecoin USDC---a digital token designed to always trade at exactly one
-US dollar---fell to \$0.88 after its issuer disclosed that \$3.3B of its cash reserves were
+On 10 March 2023, the stablecoin USDC, a digital token designed to always trade at exactly one
+US dollar, fell to \$0.88 after its issuer disclosed that \$3.3B of its cash reserves were
 trapped at the collapsing Silicon Valley Bank. Within hours, \emph{other} dollar stablecoins
 wobbled too. This paper asks a concrete, operational question: when one stablecoin breaks its
 dollar peg, \emph{which other stablecoins will follow, and how soon?} We treat this as prediction
 on a network that evolves through time, using real minute-by-minute price data from two large
-exchanges across seven crisis episodes in 2022--2023. We compare a full ladder of models---from
+exchanges across seven crisis episodes in 2022--2023. We compare a full ladder of models, from
 trivial baselines, through gradient-boosted trees and a recurrent network, to temporal graph
-neural networks (GNNs)---under an evaluation protocol carefully designed to stop a model from
+neural networks (GNNs), under an evaluation protocol carefully designed to stop a model from
 ``cheating'' by training and testing on the same crisis. Two findings stand out. First, contagion
 is essentially \emph{unpredictable} at horizons of a few hours, but becomes predictable at a
 one-day horizon, where a graph-attention network beats every non-graph model by $0.18$ in
 precision--recall AUC (averaged over five random seeds). Second, an ablation that deletes the
 network's edges shows that this advantage comes specifically from the \emph{relationships between
-stablecoins}---and from \emph{attention} over those relationships---not merely from using a more
+stablecoins}, and from \emph{attention} over those relationships, not merely from using a more
 flexible neural model. We deliver an interpretable, exportable ranking of the most systemically
 central venues in each crisis, designed as the input to downstream risk and policy analysis.
 \end{abstract}
@@ -52,21 +54,21 @@ stablecoins now settle trillions of dollars of transactions annually and serve a
 most decentralized finance. They come in two main flavours. \emph{Fiat-backed} coins (USDC, USDT,
 the now-defunct BUSD, TUSD, USDP) promise that every token is matched one-for-one by reserves of
 cash and short-term government debt. \emph{Crypto-collateralized} coins (DAI, FRAX) are instead
-backed by a basket of on-chain assets---and, importantly for this paper, that basket frequently
+backed by a basket of on-chain assets, and, importantly for this paper, that basket frequently
 \emph{includes other stablecoins}.
 
 When a stablecoin's market price drifts away from \$1, it is said to \emph{depeg}. A depeg is the
 crypto analogue of a bank run: if holders come to doubt that the token is fully backed, they rush
 to sell or redeem it, and the selling pressure pushes the price further from \$1. Because
-regulators now treat large stablecoins as systemically important---the US GENIUS Act and the EU's
+regulators now treat large stablecoins as systemically important, the US GENIUS Act and the EU's
 MiCA regulation both make reserve adequacy and contagion containment central
-concerns~\cite{genius2025,mica2023}---understanding how one depeg \emph{spreads} to others is a
+concerns~\cite{genius2025,mica2023}, understanding how one depeg \emph{spreads} to others is a
 question with direct financial-stability stakes.
 
 \subsection{A concrete example: the SVB weekend}
 On the weekend of 10--12 March 2023, Silicon Valley Bank failed. Circle, the issuer of USDC,
 disclosed that \$3.3B of the cash backing USDC was held at SVB, and the market could not tell
-whether it would be recovered. USDC---nominally worth exactly \$1---traded as low as \$0.88. The
+whether it would be recovered. USDC, nominally worth exactly \$1, traded as low as \$0.88. The
 panic did not stay contained. \textbf{DAI} fell too, because a large fraction of DAI's collateral
 was \emph{itself} USDC; \textbf{FRAX}, roughly 90\% USDC-backed, also dropped; and even
 operationally unrelated coins such as \textbf{TUSD} and \textbf{Pax Dollar (USDP)} wobbled as
@@ -79,14 +81,14 @@ stablecoin UST lost its peg and collapsed, erasing roughly \$40B and dragging th
 and crypto market down with it; in November 2022 the failure of the FTX exchange stressed DAI; and in
 February 2023 a regulatory order wound down BUSD. Each is a contagion episode in which a shock at one
 venue propagated to others through a web of shared collateral, shared venues, and shared investor
-confidence. This recurring structure---a triggering shock followed by spread to exposed or merely
-co-moving peers---is what makes the problem both important and learnable, and it is why we assemble
+confidence. This recurring structure, a triggering shock followed by spread to exposed or merely
+co-moving peers, is what makes the problem both important and learnable, and it is why we assemble
 seven such episodes rather than studying SVB alone.
 
 \subsection{The prediction problem and our contributions}
 We ask: given the state of the stablecoin market at time $t$, can we predict which currently
 healthy stablecoins will depeg within a horizon $\Delta$? This is forecasting on a \emph{temporal
-graph}---a network whose nodes are trading venues, whose edges record which venues move together
+graph}, a network whose nodes are trading venues, whose edges record which venues move together
 and in what order, and whose structure changes minute by minute (Figure~\ref{fig:network}). Graph
 neural networks are the natural model class for such structured, evolving data and have recently
 been applied to related on-chain prediction problems such as cross-pool bridge swaps on Uniswap
@@ -125,19 +127,18 @@ neural network learns from exactly this evolving structure.}
 
 \section{Background and related work}
 \paragraph{Graph neural networks, briefly.} A graph neural network learns a vector representation
-for each node by repeatedly combining the node's own features with summaries of its neighbours'---
-a procedure called \emph{message passing}. After a few rounds, each node's representation reflects
+for each node by repeatedly combining the node's own features with summaries of its neighbours', a procedure called \emph{message passing}. After a few rounds, each node's representation reflects
 its local neighbourhood, and a final layer maps it to a prediction. \textbf{GraphSAGE}~\cite{hamilton2017graphsage}
 forms the neighbour summary by averaging. \textbf{Graph attention networks
 (GAT)}~\cite{velickovic2018gat} instead \emph{learn how much weight} to place on each neighbour,
-which matters when some relationships carry far more information than others---as we will see is the
+which matters when some relationships carry far more information than others, as we will see is the
 case here. A \emph{temporal} GNN applies this at each time step to a graph that is itself changing.
 
 \paragraph{Why a graph at all.} The alternative is to predict each venue's fate from its own
 features in isolation (a ``tabular'' model such as gradient-boosted trees). That throws away the
 central fact of contagion: a healthy coin's risk depends on \emph{which of its neighbours are
 already stressed}. A graph model can propagate that neighbour information; a per-node model cannot.
-The empirical question---answered in \S\ref{sec:ablation}---is whether the cross-asset structure
+The empirical question, answered in \S\ref{sec:ablation}, is whether the cross-asset structure
 actually carries usable signal, and our ablation is designed to measure exactly that.
 
 \paragraph{On-chain graph learning.} GNNs have been applied to on-chain events such as cross-pool
@@ -160,15 +161,15 @@ the added machinery.
 classification, and depart from it in three ways that matter for the contagion setting: we work
 cross-asset on the deepest centralized venues where minute-level data is cleanest; we treat leakage
 control as a first-class constraint (without it the headline collapses to a meaningless PR-AUC of
-$1.0$); and we deliberately position the model's hub ranking as a \emph{hypothesis to be causally
+$1.0$); and we position the model's hub ranking as a \emph{hypothesis to be causally
 tested} rather than a conclusion.
 
 \section{Data and task formulation}\label{sec:data}
-\paragraph{Data sources.} We collect real 1-minute open/high/low/close/volume bars from
+\paragraph{Data sources.} We collect real 1-minute OHLCV (open, high, low, close, volume) bars from
 \textbf{Binance} (for USDC, TUSD, USDP, FRAX, BUSD, FDUSD, and the failed algorithmic coin UST, all
 quoted against USDT) and \textbf{Coinbase} (for DAI and USDT, quoted against the US dollar). Because
 Binance prices are quoted in USDT rather than dollars, we multiply them by the Coinbase USDT/USD
-price, so that a wobble in USDT itself is not hidden by the choice of quote currency---a subtlety
+price, so that a wobble in USDT itself is not hidden by the choice of quote currency, a subtlety
 that matters during a stablecoin-wide panic. A node is an (asset, venue) pair, e.g.\ ``USDC on
 Binance.'' Table~\ref{tab:episodes} lists the seven crisis episodes.
 
@@ -194,19 +195,18 @@ USDT (2018) & Oct 2018 & banking doubts & 1 \\
 
 \paragraph{Samples and labels.} We sample the market once per hour; each (hourly snapshot, node)
 pair is one example. The label is contagion \emph{onset}: node $j$ enters a \emph{new} sustained
-stress period---its price more than an asset-class-specific threshold (25 basis points for
-fiat-backed coins, 75 for crypto-backed) away from \$1 for at least ten consecutive minutes---
-within the next $\Delta$ minutes, given that it was \emph{calm} at time $t$. We exclude the coin
+stress period, its price more than an asset-class-specific threshold (25 basis points for
+fiat-backed coins, 75 for crypto-backed) away from \$1 for at least ten consecutive minutes, within the next $\Delta$ minutes, given that it was \emph{calm} at time $t$. We exclude the coin
 that triggered the episode (the ``origin''), because we want to predict the \emph{spread}, not the
 initial shock. Onset labels (rather than ``currently stressed'' labels) are essential: a
 ``currently stressed'' label is trivially predicted by persistence, whereas onset asks the genuinely
 hard question of whether stress will \emph{newly arrive}. We use four horizons: 30 minutes, 1 hour,
 4 hours, and 24 hours. Onset is rare, so the positive rate is low (2.6\% at 30 minutes rising to
-29\% at 24 hours as the window lengthens)---a fact that dictates our choice of metrics below.
+29\% at 24 hours as the window lengthens), a fact that dictates our choice of metrics below.
 Table~\ref{tab:baserates} gives the rate for every episode and horizon: it is low at short horizons
 (motivating PR-AUC and ROC over accuracy) and varies widely across episodes (motivating cluster-level
-evaluation). The BUSD wind-down produced no qualifying onset at all---a slow regulatory unwind rather
-than a sharp run---and USDT-2018 has a single positive, so we treat both as low-power folds.
+evaluation). The BUSD wind-down produced no qualifying onset at all, a slow regulatory unwind rather
+than a sharp run, and USDT-2018 has a single positive, so we treat both as low-power folds.
 
 \begin{table}[t]
 \caption{Positive (contagion-onset) rate per episode and horizon. Rates are low and highly
@@ -276,7 +276,7 @@ OU half-life & speed of mean-reversion to peg \\
 rolling return correlation exceeds a threshold, orienting the edge by the sign of their estimated
 lead--lag $\ell_{ij}$ (positive means $i$ leads $j$). We net out the dominant direction,
 $W_{ij}\leftarrow\max(0,\,\rho_{ij}^{\text{lead}}-\rho_{ji}^{\text{lead}})$, so that an edge records
-who \emph{genuinely} leads whom rather than mere co-movement---an important distinction, since during
+who \emph{genuinely} leads whom rather than mere co-movement, an important distinction, since during
 a market-wide panic everything correlates. The result is the directed graph of
 Figure~\ref{fig:network}.
 
@@ -291,7 +291,7 @@ test set. This single discipline is what separates an honest result from a misle
 believe it should be standard in on-chain contagion studies.
 
 Table~\ref{tab:leakage} makes the hazard concrete. With the overlapping FRAX/SVB episode in the
-training set, XGBoost scores a \emph{perfect} PR-AUC of $1.0$ on the held-out USDC/SVB cluster---it
+training set, XGBoost scores a \emph{perfect} PR-AUC of $1.0$ on the held-out USDC/SVB cluster, it
 has effectively memorised the March-2023 regime. Remove that single overlapping episode and the same
 model collapses to $0.067$, barely above the base rate. The ``result'' was almost entirely leakage.
 Any contagion study that splits crises by individual event rather than by time window risks reporting
@@ -359,8 +359,8 @@ set; the non-graph models receive each node's flattened feature vector, while th
 receive the directed graph. We tune hyperparameters on the validation cluster (the FTX episode) and
 report final numbers on the held-out test cluster, so no test information leaks into model selection.
 Tree ensembles use up to 300 estimators with early stopping; the neural models train for up to 150
-epochs with patience-based stopping. We report PR-AUC and ROC-AUC, and---because the positive class is
-rare and its rate varies across horizons---we read skill primarily from ROC-AUC and from PR-AUC lift
+epochs with patience-based stopping. We report PR-AUC and ROC-AUC, and, because the positive class is
+rare and its rate varies across horizons; we read skill primarily from ROC-AUC and from PR-AUC lift
 over the base rate.
 
 \paragraph{Choosing the right yardstick.} Because depeg onset is rare, accuracy is uninformative
@@ -377,14 +377,14 @@ microstructure in our data. At 24 hours, only the graph models clear ROC-AUC $0.
 reaching $0.65$. This hour-scale negative result is real, and we report it rather than bury it: it
 honestly scopes the positive claim to the day horizon.
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=\columnwidth]{figures/02_leadtime.png}
-\caption{Lead-time. \emph{Left:} ranking skill (ROC-AUC) versus horizon---only the graph models beat
-chance ($0.5$, dashed) at 24h. \emph{Right:} precision lift over the base rate. Per-node tabular
+\includegraphics[width=0.86\textwidth]{figures/02_leadtime.png}
+\caption{Lead-time. \emph{Left:} ranking skill (ROC-AUC) versus horizon, where only the graph models
+beat chance ($0.5$, dashed) at 24h. \emph{Right:} precision lift over the base rate. Per-node tabular
 models stay near zero skill at every horizon.}
 \label{fig:leadtime}
-\end{figure}
+\end{figure*}
 
 \begin{figure}[t]
 \centering
@@ -396,8 +396,7 @@ appears only in the bottom-right: graph models at the 24-hour horizon.}
 
 \paragraph{Headline (averaged over five seeds).} On the held-out SVB cluster at 24 hours, GAT
 attains PR-AUC $0.447 \pm 0.016$, a margin of $\mathbf{+0.175 \pm 0.016}$ over XGBoost, which sits
-exactly at the base rate of $0.29$ (Figure~\ref{fig:multiseed}). We emphasise the multi-seed
-reporting: a single unlucky random seed gives GAT only $0.29$, so reporting one run would have
+exactly at the base rate of $0.29$ (Figure~\ref{fig:multiseed}). The multi-seed reporting matters here: a single unlucky random seed gives GAT only $0.29$, so reporting one run would have
 \emph{understated} the effect. The tight error bars show the advantage is stable, not a lucky draw.
 
 \begin{figure}[t]
@@ -431,15 +430,15 @@ GAT (5-seed mean) & \textbf{0.447} & 0.585 & $+0.153$ \\
 \paragraph{Reading the ladder.} Walking up Table~\ref{tab:full} is instructive. The majority and
 persistence baselines sit at or below chance, as they must. Logistic regression already extracts a
 little signal (lift $+0.06$), confirming that the microstructure features are not pure noise. The
-strong tabular learner, XGBoost, then \emph{loses} that signal at the day horizon---it overfits the
-per-node features and lands below the base rate---while the GRU, which adds temporal but no
+strong tabular learner, XGBoost, then \emph{loses} that signal at the day horizon; it overfits the
+per-node features and lands below the base rate, while the GRU, which adds temporal but no
 cross-asset information, fares no better. The two graph models are the first to show clear ranking
 skill: GraphSAGE reaches ROC-AUC $0.65$, and GAT delivers the largest precision lift ($+0.153$). The
 pattern is exactly what the contagion hypothesis predicts: skill appears only once a model can see
 \emph{other} venues' stress, and is largest for the model that can weight the few relevant
 neighbours. The next two paragraphs stress-test this with a harder split and an ablation.
 
-\paragraph{The harder test: leave-one-cluster-out.} In LOCO, each cluster is held out in turn---a
+\paragraph{The harder test: leave-one-cluster-out.} In LOCO, each cluster is held out in turn, a
 stricter test of generalization to an unseen crisis type. The per-fold margins shrink but stay
 positive on the contagion-bearing folds (Figure~\ref{fig:loco}). They survive dropping the
 degenerate USDT-2018 fold, which contains a single positive example and is therefore high-variance:
@@ -447,27 +446,27 @@ on the remaining folds GAT keeps a $+0.083$ margin over XGBoost. Cross-crisis ge
 genuinely hard with only a handful of historical episodes, and we report the honest, modest LOCO
 margins alongside the strong held-out-cluster result.
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=\columnwidth]{figures/03_loeo_bars.png}
+\includegraphics[width=0.86\textwidth]{figures/03_loeo_bars.png}
 \caption{Leave-one-cluster-out PR-AUC at 24h. Graph models (GAT, dark red) lead the tabular baseline
 on the contagion-bearing folds; the single-positive USDT-2018 fold is a high-variance outlier we
 report but do not lean on.}
 \label{fig:loco}
-\end{figure}
+\end{figure*}
 
 \section{Is it the graph, or just a bigger model?}\label{sec:ablation}
 A skeptic will reasonably ask whether the GNN wins simply because it is a more flexible neural
 network, not because it uses the \emph{network}. We answer with a clean ablation: we re-run each
-GNN with all edges deleted---turning it into a per-node neural network with no message passing---and
+GNN with all edges deleted, turning it into a per-node neural network with no message passing, and
 compare to the identical architecture with the real edges (Table~\ref{tab:ablation}). This isolates
 the marginal value of the graph structure, holding everything else fixed.
 
 The decomposition is informative. The jump from XGBoost ($0.271$) to the edge-free GNNs
-($0.35$--$0.39$) is the value of the \emph{neural architecture}---a per-node neural model already
+($0.35$--$0.39$) is the value of the \emph{neural architecture}, a per-node neural model already
 beats trees. The \emph{further} jump to the edge-equipped models is the value of the \emph{graph}:
 the directed lead--lag edges add $\mathbf{+0.100}$ PR-AUC for GAT but only $+0.009$ for GraphSAGE.
-Two conclusions follow. First, the cross-asset relationships carry genuine contagion signal---the
+Two conclusions follow. First, the cross-asset relationships carry genuine contagion signal, the
 graph is not decorative. Second, that signal is captured specifically by \emph{attention}: GAT's
 ability to weight a few informative neighbours heavily is what turns the edges into skill, whereas
 GraphSAGE's uniform averaging dilutes it. This both justifies the graph model and explains
@@ -482,7 +481,7 @@ GraphSAGE.}
 \toprule
 Model rung & PR-AUC & graph contribution \\
 \midrule
-node-only (XGBoost) & 0.271 & --- \\
+node-only (XGBoost) & 0.271 &, \\
 GraphSAGE, no edges & 0.392 & \multirow{2}{*}{$+0.009$} \\
 GraphSAGE, real edges & 0.401 & \\
 GAT, no edges & 0.347 & \multirow{2}{*}{$\mathbf{+0.100}$} \\
@@ -494,24 +493,23 @@ GAT, real edges & \textbf{0.447} & \\
 \section{Interpretation and the exported hub ranking}\label{sec:interp}
 Beyond a prediction, a risk team wants to know \emph{which signals matter} and \emph{which venues
 are central}. The strongest individual predictors (XGBoost feature importance;
-Figure~\ref{fig:features}) are the Ornstein--Uhlenbeck half-life and recent 24-hour volatility---
-intuitively, a coin that is reverting toward its peg only slowly and trading turbulently is fragile.
+Figure~\ref{fig:features}) are the Ornstein--Uhlenbeck half-life and recent 24-hour volatility, intuitively, a coin that is reverting toward its peg only slowly and trading turbulently is fragile.
 This is reassuring: the model leans on economically meaningful signals, not artefacts.
 
 We summarize each crisis with an interpretable \emph{hub ranking} (Figure~\ref{fig:hubmap}) that
 combines three ingredients: how much a node influences the GNN's predictions, measured by
-\emph{occlusion} (how much predictions change when that node is removed---a perturbation-based,
+\emph{occlusion} (how much predictions change when that node is removed, a perturbation-based,
 software-version-robust alternative to GNNExplainer-style masks~\cite{ying2019gnnexplainer}); the
 node's graph \emph{betweenness centrality}; and a \emph{propagator label} computed directly from
 raw prices, so that it is not circular with the model. For the USDC/SVB crisis the top-ranked hub
 is \textbf{BUSD}.
 
-We deliberately stop at \emph{ranking}. A natural temptation is to read the top hub as ``the venue
+We stop at \emph{ranking}. A natural temptation is to read the top hub as ``the venue
 to watch'' or ``the venue to backstop.'' But centrality and attention are \emph{correlational}: they
 reward a venue for moving with the crisis, which is not the same as causing it to spread. Whether
-the top hub is actually \emph{causally} responsible---and what happens to a regulator who acts on a
-merely correlational ranking---is a distinct question that requires an intervenable model. We address
-it in a companion study that consumes exactly this exported ranking and, strikingly, finds that the
+the top hub is actually \emph{causally} responsible, and what happens to a regulator who acts on a
+merely correlational ranking, is a distinct question that requires an intervenable model. We address
+it in a companion study that consumes exactly this exported ranking and finds that the
 \#1 hub here causes no contagion at all. Our contribution in this paper is the predictor and the
 honest, reusable ranking it produces.
 
@@ -520,15 +518,15 @@ episode, a small set of \emph{empirical moments} measured directly from the pric
 depeg magnitude, the peg-recovery half-life, the everyday price volatility, and the cross-venue
 correlation during the crisis. These are precisely the quantities a contagion simulator must
 reproduce before its counterfactuals can be trusted, and exporting them under a versioned schema lets
-the two studies be genuinely coupled---the predictor's measurements become the simulator's calibration
-targets---without re-running either pipeline. We view this clean prediction$\,\to\,$validation
+the two studies be genuinely coupled, the predictor's measurements become the simulator's calibration
+targets, without re-running either pipeline. We view this clean prediction$\,\to\,$validation
 interface as a contribution in its own right.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{figures/04_features.png}
 \caption{Which signals predict contagion onset (XGBoost gain, summed over lags). Mean-reversion
-speed (OU half-life) and recent volatility dominate---economically sensible fragility signals.}
+speed (OU half-life) and recent volatility dominate, economically sensible fragility signals.}
 \label{fig:features}
 \end{figure}
 
@@ -537,17 +535,17 @@ speed (OU half-life) and recent volatility dominate---economically sensible frag
 \includegraphics[width=\columnwidth]{figures/05_hub_map.png}
 \caption{Exported hub map for USDC/SVB: graph betweenness (x) versus GNN influence (y), with the
 origin (USDC) marked separately. The top-ranked hub (BUSD) is the actionable output handed to causal
-analysis---where it is, surprisingly, refuted.}
+analysis, where it is, surprisingly, refuted.}
 \label{fig:hubmap}
 \end{figure}
 
 \section{Discussion}
 \paragraph{Why does the day horizon work when the hour does not?} A stablecoin depeg is, at root, a
 crisis of \emph{confidence} in reserves, and confidence shifts on the timescale of news cycles and
-redemption queues---hours to a day---not minutes. At the minute-to-hour scale, prices are dominated
+redemption queues, hours to a day, not minutes. At the minute-to-hour scale, prices are dominated
 by microstructure noise that carries little information about whether a \emph{new} venue will break
 its peg. By the day scale, the cross-asset structure (who is exposed to whom, who is already wobbling)
-has had time to express itself, and the graph models---which can read that structure---gain an edge.
+has had time to express itself, and the graph models, which can read that structure, gain an edge.
 The lead-time curve in Figure~\ref{fig:leadtime} is therefore not merely an empirical artefact; it
 reflects the economic timescale of a reserve run.
 
@@ -561,7 +559,7 @@ the useful neighbourhood signal is concentrated rather than diffuse.
 \paragraph{A worked example.} Consider the model's view of the SVB weekend at an hourly snapshot on
 11 March, several hours into USDC's depeg (Figure~\ref{fig:network}). USDC is deeply stressed; DAI,
 which holds USDC as collateral, has begun to slip; TUSD and USDP are calm but jittery. A per-node
-model sees only that, say, TUSD is currently at \$0.998 with normal volatility---nothing alarming, so
+model sees only that, say, TUSD is currently at \$0.998 with normal volatility, nothing alarming, so
 it predicts no onset. The graph-attention model additionally sees, through its edges, that TUSD's
 neighbours include a venue (USDC) that is severely stressed and \emph{leads} it in the lead--lag
 graph; attention concentrates on that edge, and the model raises TUSD's onset probability. This is the
@@ -573,12 +571,12 @@ study~\cite{zhou2025bridge}, we frame an on-chain phenomenon as temporal node/ed
 find graph models competitive. We differ in two ways that we believe are important for the
 contagion setting: we make leakage control explicit (without it, the headline collapses into a
 PR-AUC of $1.0$), and we treat the model's hub ranking as a hypothesis to be \emph{causally tested}
-rather than a finding in itself---the subject of our companion paper.
+rather than a finding in itself, the subject of our companion paper.
 
 \section{Conclusion}
 On real multi-venue data, day-scale stablecoin contagion is predictable, and a graph-attention
-network adds real, \emph{edge-borne} signal---an extra $0.10$ in PR-AUC over the same architecture
-without the network---while hour-scale onset is not predictable at all. The method produces an
+network adds real, \emph{edge-borne} signal, an extra $0.10$ in PR-AUC over the same architecture
+without the network, while hour-scale onset is not predictable at all. The method produces an
 interpretable, exportable ranking of systemically central venues, intended for a risk desk or
 supervisor who wants a day-ahead warning of which coins are about to come under stress.
 
@@ -588,8 +586,8 @@ can over-credit a thinly traded coin that merely \emph{appears} to lead. We repo
 negative result and the modest leave-one-cluster-out margins precisely so that the ranking is trusted
 only where it has earned it. Most importantly, the ranking is \emph{correlational} by construction: a
 venue that co-moves with a crisis can top it while being irrelevant to containing the spread.
-Surfacing that distinction---and handing the ranking to an explicit causal test rather than acting on
-it directly---is, we argue, the responsible way to use a predictor of this kind, and it motivates the
+Surfacing that distinction, and handing the ranking to an explicit causal test rather than acting on
+it directly, is, we argue, the responsible way to use a predictor of this kind, and it motivates the
 companion study that consumes exactly this export. Promising extensions are to enlarge the graph with
 decentralized-exchange pools and to add on-chain leading indicators (redemption-queue depth,
 reserve-attestation timing) beyond price. All datasets, results, and figures are regenerated
