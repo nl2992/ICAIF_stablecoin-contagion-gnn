@@ -601,59 +601,33 @@ analysis, where it is, surprisingly, refuted.}
 \end{figure}
 
 \section{Discussion}
-\paragraph{Why does the day horizon work when the hour does not?} A stablecoin depeg is, at root, a
-crisis of \emph{confidence} in reserves, and confidence shifts on the timescale of news cycles and
-redemption queues, hours to a day, not minutes. At the minute-to-hour scale, prices are dominated
-by microstructure noise that carries little information about whether a \emph{new} venue will break
-its peg. By the day scale, the cross-asset structure (who is exposed to whom, who is already wobbling)
-has had time to express itself, and the graph models, which can read that structure, gain an edge.
-The lead-time curve in Figure~\ref{fig:leadtime} is therefore not merely an empirical artefact. It
-reflects the economic timescale of a reserve run.
+\paragraph{Why the day horizon works when the hour does not.} A stablecoin depeg is at root a crisis
+of \emph{confidence} in reserves, and confidence shifts on the timescale of news cycles and redemption
+queues, hours to a day, not minutes. At shorter scales prices are dominated by microstructure noise
+that says little about whether a \emph{new} venue will break. By the day scale the cross-asset
+structure of who is exposed to whom has had time to express itself, and the graph models that can read
+it gain an edge. The lead-time curve in Figure~\ref{fig:leadtime} reflects the economic timescale of a
+reserve run, not an artefact of the metric.
 
-\paragraph{Why attention and not averaging?} The ablation (Table~\ref{tab:ablation}) shows the graph
-edges help GAT tenfold more than GraphSAGE. The reason is that contagion is \emph{sparse and
-directional}. In any given crisis only a few edges matter (e.g.\ USDC\,$\to$\,DAI), and the rest are
-co-movement noise. GraphSAGE averages over all neighbours, diluting the few informative ones, while GAT
-\emph{learns} to attend to them. This is a concrete instance of attention paying off precisely when
-the useful neighbourhood signal is concentrated rather than diffuse.
-
-\paragraph{A worked example.} Consider the model's view of the SVB weekend at an hourly snapshot on
-11 March, several hours into USDC's depeg (Figure~\ref{fig:network}). USDC is deeply stressed. DAI,
-which holds USDC as collateral, has begun to slip, and TUSD and USDP are calm but jittery. A per-node
-model sees only that, say, TUSD is currently at \$0.998 with normal volatility, nothing alarming, so
-it predicts no onset. The graph-attention model additionally sees, through its edges, that TUSD's
-neighbours include a venue (USDC) that is severely stressed and \emph{leads} it in the lead-lag
-graph. Attention concentrates on that edge, and the model raises TUSD's onset probability. This is the
-concrete mechanism behind the ablation result. The edge to a stressed leader is exactly the
-information a per-node model cannot access and an attention model can.
-
-\paragraph{Relation to prior on-chain GNN work.} Like the Uniswap-v3 bridge-swap
-study~\cite{zhou2025bridge}, we frame an on-chain phenomenon as temporal node/edge prediction and
-find graph models competitive. We differ in two ways that we believe are important for the
-contagion setting. We make leakage control explicit (without it, the headline collapses into a
-PR-AUC of $1.0$), and we treat the model's hub ranking as a hypothesis to be \emph{causally tested}
-rather than a finding in itself, the subject of our companion paper.
+\paragraph{Why attention and not averaging.} Contagion is \emph{sparse and directional}. In any crisis
+only a few edges matter (for instance USDC\,$\to$\,DAI, the edge from a stressed leader to a coin that
+holds it) and the rest are co-movement noise. GraphSAGE averages over all neighbours and dilutes the
+few informative ones, whereas GAT learns to attend to them. That is exactly the information a per-node
+model cannot access, and it is why the edges help GAT tenfold more than GraphSAGE
+(Table~\ref{tab:ablation}).
 
 \section{Conclusion}
-On real multi-venue data, day-scale stablecoin contagion is predictable, and a graph-attention
-network adds real, \emph{edge-borne} signal, an extra $0.10$ in PR-AUC over the same architecture
-without the network, while hour-scale onset is not predictable at all. The method produces an
-interpretable, exportable ranking of systemically central venues, intended for a risk desk or
-supervisor who wants a day-ahead warning of which coins are about to come under stress.
-
-Two honest caveats bound the claim. We study seven episodes on the cleanly fetchable cross-asset
-universe of two large exchanges, two of which are too sparse to carry signal. And the lead-lag edges
-can over-credit a thinly traded coin that merely \emph{appears} to lead. We report the short-horizon
-negative result and the modest leave-one-cluster-out margins precisely so that the ranking is trusted
-only where it has earned it. Most importantly, the ranking is \emph{correlational} by construction. A
-venue that co-moves with a crisis can top it while being irrelevant to containing the spread.
-Surfacing that distinction, and handing the ranking to an explicit causal test rather than acting on
-it directly, is, we argue, the responsible way to use a predictor of this kind, and it motivates the
-companion study that consumes exactly this export. Promising extensions are to enlarge the graph with
-decentralized-exchange pools and to add on-chain leading indicators (redemption-queue depth,
-reserve-attestation timing) beyond price. All datasets, results, and figures are regenerated
-end-to-end by a single committed script, so every number above can be checked rather than taken on
-faith.
+On real multi-venue data, day-scale stablecoin contagion is predictable, and a graph-attention network
+adds real, \emph{edge-borne} signal, an extra $0.10$ in PR-AUC over the same architecture without the
+network, while hour-scale onset is not predictable at all. The method produces an interpretable,
+exportable ranking of systemically central venues for a risk desk or supervisor who wants a day-ahead
+warning. Two caveats bound the claim. We study seven episodes on two large exchanges, two of which are
+too sparse to carry signal, and the lead-lag edges can over-credit a thinly traded coin that only
+\emph{appears} to lead. Most importantly, the ranking is \emph{correlational} by construction, so a
+venue can top it while being irrelevant to containing the spread. Handing the ranking to an explicit
+causal test rather than acting on it directly is the responsible way to use a predictor of this kind,
+and it motivates the companion study that consumes exactly this export. All datasets, results, and
+figures are regenerated by a single committed script, so every number above can be checked.
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{references}
