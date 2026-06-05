@@ -51,11 +51,20 @@ systemic risk, leakage-safe evaluation, decentralized finance}
 A \emph{stablecoin} is a cryptocurrency token engineered to hold a constant value, almost always
 one US dollar. Users treat \$1 of a stablecoin as interchangeable with \$1 of cash, which is why
 stablecoins now settle trillions of dollars of transactions annually and serve as the cash leg of
-most decentralized finance. They come in two main flavours. \emph{Fiat-backed} coins (USDC, USDT,
-the now-defunct BUSD, TUSD, USDP) promise that every token is matched one-for-one by reserves of
-cash and short-term government debt. \emph{Crypto-collateralized} coins (DAI, FRAX) are instead
-backed by a basket of on-chain assets, and, importantly for this paper, that basket frequently
-\emph{includes other stablecoins}.
+most decentralized finance. The two largest, USDT and USDC, are each worth tens of billions of
+dollars, so they are no longer a niche: they are core market infrastructure, and several have grown
+large enough that supervisors treat them as potential sources of systemic risk. They come in two
+main flavours. \emph{Fiat-backed} coins (USDC, USDT, the now-defunct BUSD, TUSD, USDP) promise that
+every token is matched one-for-one by \emph{reserves}, the issuer's holdings of cash and short-term
+government debt that back the coin. \emph{Crypto-collateralized} coins (DAI, FRAX) are instead backed
+by a basket of on-chain assets posted as \emph{collateral}, and, importantly for this paper, that
+basket frequently \emph{includes other stablecoins}.
+
+Two mechanisms are meant to keep the price at \$1. \emph{Redemption} lets an authorised holder return
+one token to the issuer for \$1 of reserves, and \emph{arbitrage} lets traders buy the coin cheaply
+when it trades below \$1 and redeem it for a profit, which pushes the price back up. Both depend on
+confidence that the reserves are real and reachable. When that confidence breaks, the same mechanisms
+run in reverse: holders redeem en masse, the price falls, and the fall invites more redemptions.
 
 When a stablecoin's market price drifts away from \$1, it is said to \emph{depeg}. A depeg is the
 crypto analogue of a bank run: if holders come to doubt that the token is fully backed, they rush
@@ -148,12 +157,34 @@ representation for DeFi prediction, but they evaluate \emph{prediction quality},
 \emph{cause} propagation, and they typically do not confront the leakage hazard that arises when
 crises overlap in time.
 
-\paragraph{Contagion and systemic risk.} A long line of work in network finance studies how distress
-propagates through exposure networks, from DebtRank-style centrality of bank
+\paragraph{Contagion in other markets.} The phenomenon we study is not unique to crypto; it is the
+latest instance of a pattern that recurs across financial systems. The classic model of a bank run is
+Diamond and Dybvig's~\cite{diamond1983bank}, in which a loss of confidence becomes self-fulfilling, and
+a depeg is its stablecoin analogue. In banking, distress spreads through interbank exposures, a process
+formalised as financial contagion by Allen and Gale~\cite{allen2000financial}, given a clearing-payment
+structure by Eisenberg and Noe~\cite{eisenberg2001systemic}, and studied as a network-stability question
+by Gai and Kapadia~\cite{gai2010contagion} and Acemoglu et al.~\cite{acemoglu2015systemic}, who show
+that denser links can either absorb or amplify shocks depending on their size. The money-market-fund
+panic of 2008, when one fund ``broke the buck'' and investors fled others, is a particularly close
+cousin: a fixed-value claim that suddenly is not, dragging down peers. What the stablecoin setting adds
+is minute-level, public, cross-venue price data, which lets us \emph{learn} the propagation structure
+rather than assume it.
+
+\paragraph{Graph learning for other financial-prediction tasks.} Graph and relational models have been
+used widely outside contagion. Graph convolutional networks~\cite{kipf2017gcn} and graph
+attention~\cite{velickovic2018gat} are now standard, and relational/temporal GNNs have been applied to
+equity-return prediction by encoding inter-stock relations~\cite{feng2019temporal}, to limit-order-book
+dynamics, and to fraud and anomaly detection on transaction graphs. On chain, GNNs have modelled
+cross-pool bridge swaps in Uniswap v3~\cite{zhou2025bridge}. These works establish that temporal,
+directed graphs are a productive representation for financial prediction, but they evaluate
+\emph{prediction quality}, not which nodes \emph{cause} propagation, and they rarely confront the
+leakage hazard that arises when crises overlap in time.
+
+\paragraph{Contagion and systemic risk, and our baseline.} Within network finance, distress is most
+often studied on a \emph{known} exposure network, from DebtRank-style centrality of bank
 networks~\cite{battiston2012debtrank} to agent-based models of crypto and limit-order-book
-markets~\cite{gu2024spoofability}. That literature largely \emph{assumes} a known exposure network and
-studies propagation on it; we instead \emph{learn} the predictive structure from data and ask, in a
-companion paper, whether the learned hubs are causal. Gradient-boosted trees
+markets~\cite{gu2024spoofability}. We instead \emph{learn} the predictive structure from data and ask,
+in a companion paper, whether the learned hubs are causal. Gradient-boosted trees
 (XGBoost~\cite{chen2016xgboost}) are the strong per-node baseline any graph model must beat to justify
 the added machinery.
 
@@ -230,10 +261,12 @@ USDT (2018) & 0.010 & 0.010 & 0.010 & 0.010 \\
 
 \paragraph{Node features.} Each node carries standard market-microstructure signals, each a
 quantity a trading desk would recognise: the price deviation from \$1; realized volatility over 1
-and 24 hours; trading volume; \emph{Amihud illiquidity} (the price move per dollar traded, a
-liquidity proxy); \emph{Kyle's $\lambda$} (the price impact of signed order flow); and the
-\emph{Ornstein--Uhlenbeck half-life} (how quickly the price reverts toward \$1). Short lags of each
-are appended so the model can see recent trends.
+and 24 hours; trading volume; \emph{Amihud illiquidity}~\cite{amihud2002illiquidity} (the price move
+per dollar traded, a liquidity proxy); \emph{Kyle's $\lambda$}~\cite{kyle1985continuous} (the price
+impact of signed order flow); and the \emph{Ornstein--Uhlenbeck half-life} (how quickly the price
+reverts toward \$1). These are long-standing measures of liquidity and price impact from the
+market-microstructure literature, chosen because a coin that is illiquid and slow to revert is, on
+economic grounds, the most fragile. Short lags of each are appended so the model can see recent trends.
 
 \paragraph{Edges.} For each snapshot we build a 6-hour rolling \emph{directed lead--lag} graph: two
 venues are connected if their returns are correlated, and the edge is oriented from the

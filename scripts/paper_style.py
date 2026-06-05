@@ -40,11 +40,15 @@ WIDE = (9.4, 3.7)     # a figure* spanning the text width
 
 
 def apply() -> None:
+    # Serif typography to match the ACM (acmart) body font, so figures read as
+    # part of the paper rather than pasted-in plots.
     mpl.rcParams.update({
         "figure.dpi": 200, "savefig.dpi": 200,
         "savefig.bbox": "tight", "savefig.pad_inches": 0.03,
         "savefig.facecolor": "white", "figure.facecolor": "white",
-        "font.family": "sans-serif", "font.sans-serif": ["DejaVu Sans"],
+        "font.family": "serif",
+        "font.serif": ["DejaVu Serif", "Times New Roman", "Times"],
+        "mathtext.fontset": "dejavuserif",
         "font.size": 10.5, "axes.titlesize": 11, "axes.titleweight": "bold",
         "axes.labelsize": 10, "legend.fontsize": 8.5,
         "xtick.labelsize": 9, "ytick.labelsize": 9,
