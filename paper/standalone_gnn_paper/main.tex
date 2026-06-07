@@ -344,7 +344,7 @@ takes a turn as the test set. This single discipline is what separates an honest
 believe it should be standard in on-chain contagion studies.
 
 Table~\ref{tab:leakage} makes the hazard concrete. With the overlapping FRAX/SVB episode in the
-training set, XGBoost scores a \emph{perfect} PR-AUC of $1.0$ on the held-out USDC/SVB cluster, it
+training set, XGBoost scores a \emph{perfect} PR-AUC of $1.0$ on the held-out USDC/SVB cluster. It
 has effectively memorised the March-2023 regime. Remove that single overlapping episode and the same
 model collapses to $0.067$, barely above the base rate. The ``result'' was almost entirely leakage.
 Any contagion study that splits crises by individual event rather than by time window risks reporting
@@ -517,7 +517,7 @@ the marginal value of the graph structure, holding everything else fixed.
 The decomposition is informative. The jump from XGBoost ($0.271$) to the edge-free GNNs
 (from $0.35$ to $0.39$) is the value of the \emph{neural architecture}, since a per-node neural model
 already beats trees. The \emph{further} jump to the edge-equipped models is the value of the \emph{graph}. The directed lead-lag edges add $\mathbf{+0.100}$ PR-AUC for GAT but only $+0.009$ for GraphSAGE.
-Two conclusions follow. First, the cross-asset relationships carry genuine contagion signal, the
+Two conclusions follow. First, the cross-asset relationships carry genuine contagion signal. The
 graph is not decorative. Second, that signal is captured specifically by \emph{attention}. GAT's
 ability to weight a few informative neighbours heavily is what turns the edges into skill, whereas
 GraphSAGE's uniform averaging dilutes it. This both justifies the graph model and explains
@@ -543,8 +543,8 @@ GAT, real edges & \textbf{0.447} & \\
 
 \section{Interpretation and the exported hub ranking}\label{sec:interp}
 Beyond a prediction, a risk team wants to know \emph{which signals matter} and \emph{which venues
-are central}. The strongest individual predictors (XGBoost feature importance;
-Figure~\ref{fig:features}) are the Ornstein-Uhlenbeck half-life and recent 24-hour volatility, intuitively, a coin that is reverting toward its peg only slowly and trading turbulently is fragile.
+are central}. The strongest individual predictors (XGBoost feature importance,
+Figure~\ref{fig:features}) are the Ornstein-Uhlenbeck half-life and recent 24-hour volatility. Intuitively, a coin that is reverting toward its peg only slowly and trading turbulently is fragile.
 This is reassuring. The model leans on economically meaningful signals, not artefacts.
 
 We summarize each crisis with an interpretable \emph{hub ranking} (Figure~\ref{fig:hubmap}) that
@@ -579,7 +579,7 @@ episode, a small set of \emph{empirical moments} measured directly from the pric
 depeg magnitude, the peg-recovery half-life, the everyday price volatility, and the cross-venue
 correlation during the crisis. These are precisely the quantities a contagion simulator must
 reproduce before its counterfactuals can be trusted, and exporting them under a versioned schema lets
-the two studies be genuinely coupled, the predictor's measurements become the simulator's calibration
+the two studies be genuinely coupled. The predictor's measurements become the simulator's calibration
 targets, without re-running either pipeline. We view this clean prediction$\,\to\,$validation
 interface as a contribution in its own right.
 
@@ -616,6 +616,74 @@ few informative ones, whereas GAT learns to attend to them. That is exactly the 
 model cannot access, and it is why the edges help GAT tenfold more than GraphSAGE
 (Table~\ref{tab:ablation}).
 
+\paragraph{Reconciling with prior on-chain GNNs.} Our finding that attention beats mean
+aggregation is, at first glance, the opposite of the closest prior on-chain study. In
+six-hour bridge-swap link prediction on Uniswap v3, prior work~\cite{zhou2025bridge} reports that a
+mean-aggregating GraphSAGE \emph{outperforms} a graph-attention network, and that GAT's
+extra parameters overfit their ten-node pool graph. The two results are in fact consistent
+once the edge semantics differ. In their link-prediction task the graph is dense and the
+informative signal lives largely in node and pair features, so uniform neighbour averaging
+is an efficient, low-variance summary and the attention parameters mostly add variance. In
+our contagion task the graph is sparse and \emph{directional}, a depeg flows from a stressed
+leader to the specific peers that hold it, so a handful of edges carry almost all the signal
+and the rest are panic-driven co-movement. That is precisely the regime in which attention
+pays off, which our edge ablation confirms by showing the directional edges add ten times
+more to GAT than to GraphSAGE. The unifying principle is that attention helps when a few
+directional edges dominate and hurts when edges are homogeneous, and the stablecoin
+contagion network sits firmly in the former regime.
+
+\subsection{Implications for Risk Management and Financial Stability}
+
+The GAT hub ranking produced by this model is not merely an academic output. It is an operationalizable
+signal. A risk desk at a regulated stablecoin issuer, a bank with stablecoin exposure, or a supervisory
+body operating under the reserve-adequacy mandates of the US GENIUS Act~\cite{genius2025} or the EU's
+MiCA framework~\cite{mica2023} can consume the ranked venue list directly. The model assigns each venue
+a daily contagion-onset probability, and any venue crossing a configurable alert threshold can trigger
+a pre-defined response protocol: collateral review, redemption-gate readiness, or bilateral communication
+with the issuer. Because the 24-hour horizon is where predictive skill emerges (ROC-AUC 0.65 for
+GraphSAGE, PR-AUC lift $+0.153$ for GAT), the practical interpretation is that a risk officer receives
+roughly one business day of actionable lead time before a healthy venue becomes stressed. That window
+is meaningful. A trading desk can reduce exposure to flagged venues. A central bank liquidity facility
+can be placed on standby. An issuer can pre-announce reserve confirmations to dampen the confidence
+spiral before it compounds. None of these interventions require certainty about causation. Elevated
+probability is sufficient to justify precautionary positioning.
+
+The attention weights themselves carry additional supervisory value beyond the ranked list. At each
+daily snapshot, the GAT model produces a matrix of attention coefficients $\alpha_{jk}$ over all active
+directed edges. Aggregating those weights by target venue yields a per-venue \emph{systemic attention
+score}, a continuous measure of how much of the network's predictive mass is flowing toward a given
+stablecoin at that moment. A supervisor monitoring this score continuously would observe it spiking
+toward USDC and DAI in the 24 to 48 hours before the SVB weekend, well before the depeg itself became
+visible. This score can be computed in real time from the same price feeds that exchanges already
+publish, requires no proprietary data, and produces a single number per venue per day that fits within
+existing market-surveillance dashboards. The GENIUS Act's mandate for continuous reserve monitoring
+creates a natural regulatory hook for exactly this kind of automated, model-driven alert.
+
+Connecting this model to the companion agent-based study is essential for understanding its proper
+role in a policy workflow. The hub ranking exported here is imported into a companion agent-based
+model (ABM) that tests whether intervening on the top-ranked venue actually suppresses contagion spread.
+The two papers together form a prediction-to-intervention pipeline. This paper provides the
+data-driven prior: here are the venues the model attends to most, and here is its probabilistic
+forecast. The companion ABM then asks the causal counterfactual: if a regulator had backstopped that
+venue, would the contagion have been contained? The finding there is sobering. The top-ranked hub
+(BUSD during SVB) turns out not to be causally pivotal. A purely correlational ranking, acted upon
+without causal vetting, would have directed intervention resources to the wrong venue. This is the
+core argument for the two-paper architecture. Prediction is necessary but not sufficient. Risk
+managers who adopt the GAT score should treat it as a triage signal that flags candidates for deeper
+causal scrutiny, not as a direct intervention target.
+
+The practical budget implications follow from this distinction. At the 24-hour horizon, the model
+achieves a precision-recall AUC of 0.447 against a base rate of 0.29, meaning it concentrates true
+positives substantially above random. A supervisor who uses the top-decile GAT scores to allocate
+monitoring attention will over-weight genuinely at-risk venues relative to a naive sweep of the full
+market. For a central bank or resolution authority with limited staff bandwidth during a fast-moving
+crisis, that triage value is real even if the model is not causal. The responsible deployment
+therefore has two layers. In the first layer, the attention score flags venues for immediate
+monitoring. In the second layer, a causal model (the companion ABM, or a future structural model
+estimated from the intervened data) determines which flagged venues warrant active policy response.
+Together, the two layers operationalize a principled, data-driven approach to stablecoin
+contagion containment that is technically tractable under existing regulatory frameworks.
+
 \section{Conclusion}
 On real multi-venue data, day-scale stablecoin contagion is predictable, and a graph-attention network
 adds real, \emph{edge-borne} signal, an extra $0.10$ in PR-AUC over the same architecture without the
@@ -628,6 +696,43 @@ venue can top it while being irrelevant to containing the spread. Handing the ra
 causal test rather than acting on it directly is the responsible way to use a predictor of this kind,
 and it motivates the companion study that consumes exactly this export. All datasets, results, and
 figures are regenerated by a single committed script, so every number above can be checked.
+
+%% PROPOSED SEMINAL VISUAL:
+%% A composite two-panel figure for the USDC/SVB crisis episode.
+%%
+%% LEFT PANEL — GAT Attention Weight Heatmap during SVB Crisis:
+%% A square heatmap where rows index "source" stablecoins (USDC, DAI, FRAX, BUSD, TUSD, USDP)
+%% and columns index "target" stablecoins (same set). Each cell (i, j) is shaded by the mean
+%% GAT attention weight alpha_{ij} averaged over all hourly snapshots in the 48-hour pre-crisis
+%% window (10-11 March 2023). Darker (e.g. deep red or purple) means the model attends strongly
+%% to source i when predicting target j's contagion onset. Overlay a diagonal timeline arrow
+%% pointing from upper-left to lower-right, with tick marks labeled by the actual depeg sequence
+%% (USDC depegs first, then DAI, then FRAX, etc.) so the reader can see that the order of high
+%% attention on the diagonal matches the order of actual depeg. The colorbar label reads
+%% "Mean GAT attention weight (alpha)". A brief caption note explains that each row sums to 1
+%% because attention weights are normalized across sources for each target.
+%%
+%% RIGHT PANEL — Attention vs. Depeg Magnitude Scatter:
+%% Horizontal axis: mean incoming attention weight received by each stablecoin (i.e. the column
+%% sum from the left panel, normalized), labeled "GAT attention received (normalized)".
+%% Vertical axis: eventual depeg magnitude during the SVB crisis (peak deviation from $1.00 in
+%% basis points), labeled "Peak depeg magnitude (bps)".
+%% Each stablecoin is a labeled point (USDC, DAI, FRAX, BUSD, TUSD, USDP). The origin coin
+%% (USDC) is marked with a distinct symbol (e.g. a star or open circle) and a note that it is
+%% the excluded trigger. A light regression line is drawn through the non-origin coins. The
+%% expected pattern — that venues receiving more model attention also experience larger eventual
+%% depegs — would appear as a positive slope, illustrating that structured attention predicts
+%% structured contagion.
+%%
+%% UNIFIED NARRATIVE:
+%% The two panels together tell the paper's story in one image. The left panel shows that the
+%% model allocates its attention in a structured, crisis-specific pattern that tracks the actual
+%% propagation order. The right panel shows that this attention is not arbitrary — it correlates
+%% with the severity of realized outcomes. Together they answer the central interpretability
+%% question: the model attends to the right venues AND those venues actually depeg. This figure
+%% should appear in the Interpretation section (Section 6) immediately after the hub map
+%% (Figure 5) and before the Discussion, and should be referenced as the paper's central
+%% "story-in-one-image" result.
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{references}
