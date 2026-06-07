@@ -138,10 +138,19 @@ neural network learns from exactly this evolving structure.}
 \paragraph{Graph neural networks, briefly.} A graph neural network learns a vector representation
 for each node by repeatedly combining the node's own features with summaries of its neighbours', a procedure called \emph{message passing}. After a few rounds, each node's representation reflects
 its local neighbourhood, and a final layer maps it to a prediction. \textbf{GraphSAGE}~\cite{hamilton2017graphsage}
-forms the neighbour summary by averaging. \textbf{Graph attention networks
-(GAT)}~\cite{velickovic2018gat} instead \emph{learn how much weight} to place on each neighbour,
-which matters when some relationships carry far more information than others, as we will see is the
-case here. A \emph{temporal} GNN applies this at each time step to a graph that is itself changing.
+forms the neighbour summary by averaging. \textbf{Graph attention networks (GAT)}~\cite{velickovic2018gat} instead
+\emph{learn how much weight} to place on each neighbour.  Concretely, the
+attention coefficient from node $k$ to node $j$ is
+\begin{equation}
+  \alpha_{jk} = \frac{\exp\!\bigl(\mathrm{LeakyReLU}(\mathbf{a}^\top[\mathbf{W}\mathbf{h}_j \Vert \mathbf{W}\mathbf{h}_k])\bigr)}
+    {\sum_{m\in\mathcal{N}(j)}\exp\!\bigl(\mathrm{LeakyReLU}(\mathbf{a}^\top[\mathbf{W}\mathbf{h}_j \Vert \mathbf{W}\mathbf{h}_m])\bigr)},
+\end{equation}
+where $\mathbf{h}_j$ is node $j$'s feature vector, $\mathbf{W}$ is a shared linear
+projection, $\mathbf{a}$ is a learnable attention vector, and $\Vert$ denotes
+concatenation.  The updated representation is $\mathbf{h}'_j=\sum_k\alpha_{jk}\mathbf{W}\mathbf{h}_k$.
+This learned weighting matters when some relationships carry far more information than others, as
+we will see is the case here: attention concentrates on the few strongly leading venues.
+A \emph{temporal} GNN applies this at each time step to a graph that is itself changing.
 
 \paragraph{Why a graph at all.} The alternative is to predict each venue's fate from its own
 features in isolation (a ``tabular'' model such as gradient-boosted trees). That throws away the
@@ -233,7 +242,15 @@ initial shock. Onset labels (rather than ``currently stressed'' labels) are esse
 ``currently stressed'' label is trivially predicted by persistence, whereas onset asks the genuinely
 hard question of whether stress will \emph{newly arrive}. We use four horizons, namely 30 minutes, 1 hour,
 4 hours, and 24 hours. Onset is rare, so the positive rate is low (2.6\% at 30 minutes rising to
-29\% at 24 hours as the window lengthens), a fact that dictates our choice of metrics below.
+29\% at 24 hours as the window lengthens), a fact that dictates our choice of metrics.
+\emph{Precision-Recall AUC} (PR-AUC) is the area under the curve that plots
+precision $P = \mathrm{TP}/(\mathrm{TP}+\mathrm{FP})$ against recall
+$R = \mathrm{TP}/(\mathrm{TP}+\mathrm{FN})$ across all score thresholds.
+Unlike ROC-AUC, PR-AUC is not inflated by the large number of true negatives that
+dominate a rare-event dataset: a classifier that flags nothing scores $0$ on PR-AUC
+but still scores $0.5$ on ROC-AUC at a 2.6\% base rate.  PR-AUC is therefore the
+appropriate metric when the cost of missing a contagion event (false negative) is high
+and the base rate is low.
 Table~\ref{tab:baserates} gives the rate for every episode and horizon. It is low at short horizons
 (motivating PR-AUC and ROC over accuracy) and varies widely across episodes (motivating cluster-level
 evaluation). The BUSD wind-down produced no qualifying onset at all, a slow regulatory unwind rather
@@ -340,7 +357,10 @@ near-perfect. We observed XGBoost reaching a PR-AUC of $1.0$, an obvious artifac
 than genuine generalization. We therefore group same-window episodes into \emph{clusters} and never
 split a cluster across train and test. We report two protocols. The first is a \emph{held-out SVB
 cluster}, our marquee test. The second is \emph{leave-one-cluster-out} (LOCO), in which each cluster
-takes a turn as the test set. This single discipline is what separates an honest result from a misleading one, and we
+takes a turn as the test set: train on all crisis clusters except one, then test on the held-out
+cluster. Because crises in 2022--2023 often co-occur (USDC/SVB and FRAX/SVB share the same
+calendar window), a naive random split would leak future-crisis information into training; LOCO
+enforces that the model has never seen the test crisis at training time. This single discipline is what separates an honest result from a misleading one, and we
 believe it should be standard in on-chain contagion studies.
 
 Table~\ref{tab:leakage} makes the hazard concrete. With the overlapping FRAX/SVB episode in the
