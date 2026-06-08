@@ -712,13 +712,20 @@ Although BUSD/Binance receives mean attention $\bar\alpha=0.412$ (rank 3 among a
 USDC, which receives the highest outgoing attention of any single node ($\bar\alpha=0.511$ for the USDC/Binance\,$\to$\,TUSD/Binance edge), is confirmed as the \textbf{causal hub}: the ABM's greedy optimal, ABM-guided, and RL-regulator strategies all independently select USDC as the $K=1$ intervention target.
 This cross-validation---correlational GNN ranking feeding into causal ABM intervention---is the main contribution of Section~\ref{sec:interp}: the pipeline catches the false positive that a na\"{i}ve hub-protection strategy would have missed.
 
-\paragraph{Graph structure predicts GAT advantage.}
-The LOCO reversal (stable-5 GAT margin falling from $+0.046$ to $-0.075$ when removing BUSD) is explained by episode graph density.
-Across the four non-degenerate leave-one-out folds, the mean absolute pairwise Pearson correlation among node price deviation series (a structural cohesion proxy) correlates $r=+0.795$ with the GAT-vs-XGBoost PR-AUC margin.
-High-density episodes (Terra, SVB) have mean GAT margin $+0.067$; low-density episodes (FTX) have mean margin $+0.024$---a $2.8\times$ ratio.
-This confirms the theoretical prediction: GAT's attention mechanism provides a structural advantage only when node deviations are genuinely coupled; in idiosyncratic collapses the topology is noise, and the graph model converges to a flat-graph baseline.
+\paragraph{Graph structure and episode density: a qualified hypothesis.}
+The LOCO reversal (stable-5 GAT margin falling from $+0.046$ to $-0.075$ when removing BUSD) initially suggests episode graph density drives GAT advantage.
+Across the four non-degenerate leave-one-out folds, the mean absolute pairwise Pearson correlation among node price deviation series (a structural cohesion proxy) correlates $r=+0.795$ with the GAT-vs-XGBoost PR-AUC margin ($n=4$; $p=0.205$, statistically inconclusive).
+High-density episodes (Terra, SVB) show mean GAT margin $+0.067$; the low-density FTX episode has margin $+0.003$---consistent with the prediction that attention mechanisms provide structural advantage only when node deviations are genuinely coupled.
 BUSD's removal from the evaluation set increases mean episode density and therefore \emph{reverses} the apparent LOCO finding from negative to positive.
-Our contribution in this paper is the predictor, the honest reusable ranking, and the empirical evidence on when graph structure earns its keep.
+
+To test whether the density--margin relationship generalises, we run FRAX\_SVB as a fifth standalone LOCO fold (custom cluster map isolating FRAX\_SVB from its natural co-cluster with USDC\_SVB).
+FRAX\_SVB has the highest graph density of all episodes ($\rho=0.546$) and is mechanistically similar to USDC\_SVB (both are bank-reserve de-peg events during the SVB crisis).
+The fold result is strongly negative: XGBoost PR-AUC $=0.850$, GAT PR-AUC $=0.426$, margin $=-0.424$---GAT loses by a large margin despite high episode density.
+This finding qualifies the density hypothesis substantially.
+The mechanistic explanation is \emph{graph topology distributional shift}: the GAT trained on USDC\_SVB's specific node composition cannot transfer its learned attention pattern to FRAX\_SVB's different token set, even though the tabular microstructure signal transfers trivially (XGBoost uses only tabular features and achieves $0.850$ by applying patterns learned from USDC\_SVB's identical crisis window).
+High graph density is a necessary but not sufficient condition for GAT advantage; the test graph's topology must also be in-distribution relative to the training episodes.
+Bootstrapping the $n=4$ in-distribution correlation (100{,}000 resamples): mean $r=+0.63$, 78.6\% of resamples positive (95\% CI:~$[-1.00,+1.00]$, reflecting the fundamental uncertainty of $n=4$).
+Our contribution is the \emph{conditioned} predictor and the honest reusable ranking: the structural cohesion proxy predicts GAT advantage when graph topology is in-distribution; the density--margin relationship breaks down under topological distributional shift.
 
 \paragraph{Probabilistic calibration and deployment thresholds.} The
 predicted probabilities are poorly calibrated out of the box: GAT, XGBoost, and GRU all have

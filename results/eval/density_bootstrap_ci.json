@@ -1,0 +1,34 @@
+{
+  "observed_r": 0.7953,
+  "n_episodes": 4,
+  "n_bootstrap": 100000,
+  "ci_95_lo": -1.0,
+  "ci_95_hi": 1.0,
+  "ci_90_lo": -1.0,
+  "ci_90_hi": 1.0,
+  "boot_mean_r": 0.6309,
+  "pct_resamples_positive": 0.7857,
+  "pct_resamples_above_0p5": 0.7857,
+  "episodes": [
+    {
+      "episode": "Terra_2022",
+      "density": 0.3602,
+      "gat_margin": 0.0878
+    },
+    {
+      "episode": "SVB_2023",
+      "density": 0.3946,
+      "gat_margin": 0.0466
+    },
+    {
+      "episode": "USDT_2018",
+      "density": 0.3491,
+      "gat_margin": 0.0452
+    },
+    {
+      "episode": "FTX_2022",
+      "density": 0.0802,
+      "gat_margin": 0.0028
+    }
+  ]
+}
