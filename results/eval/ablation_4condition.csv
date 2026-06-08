@@ -1,0 +1,5 @@
+condition,node_features,graph_edges,model,pr_auc_mean,pr_auc_std,base_rate,delta_vs_xgboost
+"1. Tabular (XGBoost, no graph)",yes,n/a,XGBoost,0.2713,0.0,0.2932,0.0
+"2. GAT, node feat only (no edges)",yes,no,GAT,0.3465,0.0574,0.2932,0.0752
+"3. GAT, edges only (no node feat)",no,yes,GAT,0.2932,0.0,0.2932,0.0219
+"4. GAT, full (node feat + edges)",yes,yes,GAT,0.4465,0.0138,0.2932,0.1752

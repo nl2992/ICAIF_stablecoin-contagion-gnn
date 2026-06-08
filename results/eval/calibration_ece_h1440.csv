@@ -1,0 +1,4 @@
+model,ece,brier_score,calibrated,n,pos_rate
+gat,0.2567,0.3213,False,1859,0.2932
+xgboost,0.2432,0.2928,False,1859,0.2932
+gru,0.2345,0.2813,False,1859,0.2932

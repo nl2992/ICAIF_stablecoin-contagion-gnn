@@ -32,7 +32,6 @@ def make_xgboost(
         colsample_bytree=0.8,
         scale_pos_weight=scale_pos_weight,
         eval_metric="logloss",
-        use_label_encoder=False,
         random_state=seed,
         n_jobs=-1,
     )

@@ -1,0 +1,4 @@
+error_type,failure_mode,count,mean_prob,top_feature
+FN,FN_borderline,1,0.4567,ou_half_life_lag60
+FN,FN_slow_onset,30,0.07956333333333333,ou_half_life_lag60
+FP,FP_spurious_edge,30,0.8856,ou_half_life_lag60

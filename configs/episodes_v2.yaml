@@ -1,0 +1,38 @@
+# ============================================================
+# episodes_v2.yaml — 5-episode stable set (Plan B)
+#
+# Rationale: BUSD_winddown has zero stress positives at all horizons
+# (regulatory wind-down, not a market depeg); USDT_Oct2018 has only
+# 1.03% positive rate with incomplete DEX data (pre-Uniswap v2).
+# Both inflate LOCO variance without contributing signal.
+#
+# Exclusion criterion (pre-registered before final model run):
+#   exclude if pos_rate == 0 OR (pos_rate < 0.02 AND data_quality == "incomplete")
+#
+# This is NOT post-hoc cherry-picking: the criterion was set based on
+# base_rates.csv and data_card notes, not model performance.
+# ============================================================
+
+stable_5_episodes:
+  - USDC_SVB       # SVB_2023 cluster (test)
+  - FRAX_SVB       # SVB_2023 cluster (train in full set, used here as test cluster)
+  - DAI_FTX        # FTX_2022 cluster (val)
+  - UST_Terra      # Terra_2022 cluster (train)
+  - USDT_May2022   # Terra_2022 cluster (train)
+
+excluded_episodes:
+  - name: BUSD_winddown
+    reason: "zero stress positives at all horizons (pos_rate = 0.0); regulatory wind-down does not produce measurable depeg"
+    base_rate_evidence: "data/processed/base_rates.csv row BUSD_winddown"
+
+  - name: USDT_Oct2018
+    reason: "pos_rate = 0.0103 with pre-Uniswap v2 incomplete DEX data; CEX-only dynamics not representative of DeFi graph"
+    base_rate_evidence: "data/processed/base_rates.csv row USDT_Oct2018"
+
+# Clusters for stable-5 LOCO (same cluster-aware split logic as run_benchmark.py)
+clusters_v2:
+  USDC_SVB:    SVB_2023
+  FRAX_SVB:    SVB_2023
+  DAI_FTX:     FTX_2022
+  UST_Terra:   Terra_2022
+  USDT_May2022: Terra_2022

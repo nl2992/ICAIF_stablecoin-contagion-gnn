@@ -1,0 +1,35 @@
+# ============================================================
+# model_tgn.yaml — TGN-lite hyperparameters (Plan E)
+#
+# Mirrors GAT config but adds temporal memory (memory_dim: 32).
+# All other hyperparameters identical to GAT for fair comparison.
+# ============================================================
+
+model: tgn_lite
+
+architecture:
+  hidden_channels: 64
+  heads: 4
+  num_layers: 3
+  dropout: 0.2
+  memory_dim: 32      # GRU hidden state dimension per node
+
+training:
+  lr: 1.0e-3
+  epochs: 100
+  patience: 12
+  seed: 42
+  weight_decay: 1.0e-5
+
+evaluation:
+  horizon_min: 1440
+  protocol: loco           # leave-one-cluster-out
+  seeds: [0, 1, 2, 3, 4]  # same as GAT ablation for fair CI comparison
+
+notes: >
+  TGN-lite is a lightweight Temporal Graph Network that reuses GAT message-passing
+  but augments each node's input with a GRU hidden state from the previous snapshot.
+  Memory is initialised to zeros at the start of each crisis episode.
+  Detached after each snapshot to avoid full BPTT across episode length.
+  If TGN-lite does not improve over static GAT, this is a valid finding:
+  temporal memory does not add beyond the rolling 6h edge construction.

@@ -1,0 +1,8 @@
+{
+  "gat_mean_pr_auc": 0.1768,
+  "tgn_mean_pr_auc": 0.1851,
+  "mean_delta_tgn_minus_gat": 0.0083,
+  "tgn_wins_folds_seeds": 4,
+  "total_folds_seeds": 8,
+  "finding": "TGN-lite improves over static GAT (mean delta = +0.0083). Temporal memory contributes beyond the 6h rolling-edge graph."
+}

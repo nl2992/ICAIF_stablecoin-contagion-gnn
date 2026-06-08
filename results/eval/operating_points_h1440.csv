@@ -1,0 +1,2 @@
+model,operating_point,threshold,precision,recall,f1,alert_rate
+gat,rec_ge_0.60,0.4,0.3331,0.9229,0.4895,0.8123

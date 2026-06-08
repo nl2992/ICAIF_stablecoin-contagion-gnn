@@ -66,3 +66,12 @@ class GATContagion(nn.Module):
             x = F.dropout(x, p=self.dropout, training=self.training)
         x = self.convs[-1](x, edge_index, edge_attr=edge_attr)
         return self.head(x)
+
+    def forward_with_attention(self, x, edge_index, edge_attr=None):
+        """Return (logits, alpha, edge_index) where alpha are last-layer attention weights."""
+        for conv in self.convs[:-1]:
+            x = F.elu(conv(x, edge_index, edge_attr=edge_attr))
+            x = F.dropout(x, p=self.dropout, training=self.training)
+        out, (_, alpha) = self.convs[-1](x, edge_index, edge_attr=edge_attr,
+                                         return_attention_weights=True)
+        return self.head(out), alpha, edge_index

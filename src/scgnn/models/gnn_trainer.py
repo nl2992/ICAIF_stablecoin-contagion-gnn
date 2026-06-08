@@ -33,7 +33,8 @@ class GNNContagionTrainer:
     def __init__(self, kind: str = "graphsage", horizon: int = 60, hidden: int = 64,
                  layers: int = 3, dropout: float = 0.2, lr: float = 1e-3,
                  epochs: int = 100, patience: int = 12, seed: int = 42,
-                 device: str = "cpu", ablate_edges: bool = False):
+                 device: str = "cpu", ablate_edges: bool = False,
+                 ablate_node_features: bool = False):
         self.kind = kind; self.horizon = horizon; self.hidden = hidden
         self.layers = layers; self.dropout = dropout; self.lr = lr
         self.epochs = epochs; self.patience = patience; self.seed = seed
@@ -42,12 +43,16 @@ class GNNContagionTrainer:
         # ablation: drop all edges -> the GNN degenerates to a per-node MLP (no message
         # passing), isolating the marginal contribution of the GRAPH structure.
         self.ablate_edges = ablate_edges
+        # ablation: zero node features -> GNN uses only graph structure (topology only).
+        self.ablate_node_features = ablate_node_features
 
     def _maybe_ablate(self, d):
         if self.ablate_edges:
             d.edge_index = torch.zeros((2, 0), dtype=torch.long, device=d.x.device)
             d.edge_attr = torch.zeros((0, d.edge_attr.shape[1]), dtype=torch.float32,
                                       device=d.x.device)
+        if self.ablate_node_features:
+            d.x = torch.zeros_like(d.x)
         return d
 
     def _episode_data(self, names: List[str]) -> List:

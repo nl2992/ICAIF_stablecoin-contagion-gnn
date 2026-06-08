@@ -1,0 +1,9 @@
+model,error_type,failure_mode,count,mean_prob,top_feat
+gat,FN,FN_borderline,2,0.30369999999999997,ou_half_life_lag30
+gat,FN,FN_slow_onset,13,0.06889230769230768,ou_half_life
+gat,FP,FP_spurious_edge,15,1.0,ou_half_life_lag1
+graphsage,FN,FN_slow_onset,15,0.0,ou_half_life_lag10
+graphsage,FP,FP_spurious_edge,15,0.5479533333333334,ou_half_life_lag10
+gru,FN,FN_slow_onset,15,0.008786666666666667,ou_half_life_lag30
+gru,FP,FP_spurious_edge,4,0.65985,log_vol_1h
+xgboost,FN,FN_slow_onset,15,0.0,log_vol_1h_lag10
