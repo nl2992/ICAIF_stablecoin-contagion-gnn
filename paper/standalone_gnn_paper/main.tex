@@ -454,9 +454,8 @@ set. The non-graph models receive each node's flattened feature vector, while th
 receive the directed graph. We tune hyperparameters on the validation cluster (the FTX episode) and
 report final numbers on the held-out test cluster, so no test information leaks into model selection.
 Tree ensembles use up to 300 estimators with early stopping. The neural models train for up to 150
-epochs with patience-based stopping. We report PR-AUC and ROC-AUC, and, because the positive class is
-rare and its rate varies across horizons. We read skill primarily from ROC-AUC and from PR-AUC lift
-over the base rate.
+epochs with patience-based stopping. We report PR-AUC and ROC-AUC; because the positive class is rare and its rate varies across
+horizons, we read skill primarily from ROC-AUC and from PR-AUC lift over the base rate.
 
 \paragraph{Choosing the right yardstick.} Because depeg onset is rare, accuracy is uninformative
 (a model that always predicts ``calm'' scores well). We use precision-recall AUC (PR-AUC), which
@@ -490,8 +489,8 @@ appears only in the bottom-right, among the graph models at the 24-hour horizon.
 \end{figure}
 
 \paragraph{Headline (averaged over five seeds).} On the held-out SVB cluster at 24 hours, GAT
-attains PR-AUC $0.447 \pm 0.016$, a margin of $\mathbf{+0.175 \pm 0.016}$ over XGBoost, which sits
-exactly at the base rate of $0.29$ (Figure~\ref{fig:multiseed}). The multi-seed reporting matters here. A single unlucky random seed gives GAT only $0.29$, so reporting one run would have
+attains PR-AUC $0.447 \pm 0.016$, a margin of $\mathbf{+0.175 \pm 0.016}$ over XGBoost, which falls
+\emph{below} the base rate at $0.271$ (Figure~\ref{fig:multiseed}). The multi-seed reporting matters here. A single unlucky random seed gives GAT only $0.29$, so reporting one run would have
 \emph{understated} the effect. The tight error bars show the advantage is stable, not a lucky draw.
 All five seeds independently beat XGBoost (sign-test $p=0.031$). GraphSAGE also beats the base
 rate across all five seeds (5-seed mean $0.401 \pm 0.064$), though its higher variance reflects
