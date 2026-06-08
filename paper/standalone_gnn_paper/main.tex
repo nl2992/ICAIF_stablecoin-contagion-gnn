@@ -721,11 +721,15 @@ BUSD's removal from the evaluation set increases mean episode density and theref
 To test whether the density--margin relationship generalises, we run FRAX\_SVB as a fifth standalone LOCO fold (custom cluster map isolating FRAX\_SVB from its natural co-cluster with USDC\_SVB).
 FRAX\_SVB has the highest graph density of all episodes ($\rho=0.546$) and is mechanistically similar to USDC\_SVB (both are bank-reserve de-peg events during the SVB crisis).
 The fold result is strongly negative: XGBoost PR-AUC $=0.850$, GAT PR-AUC $=0.426$, margin $=-0.424$---GAT loses by a large margin despite high episode density.
-This finding qualifies the density hypothesis substantially.
-The mechanistic explanation is \emph{graph topology distributional shift}: the GAT trained on USDC\_SVB's specific node composition cannot transfer its learned attention pattern to FRAX\_SVB's different token set, even though the tabular microstructure signal transfers trivially (XGBoost uses only tabular features and achieves $0.850$ by applying patterns learned from USDC\_SVB's identical crisis window).
-High graph density is a necessary but not sufficient condition for GAT advantage; the test graph's topology must also be in-distribution relative to the training episodes.
-Bootstrapping the $n=4$ in-distribution correlation (100{,}000 resamples): mean $r=+0.63$, 78.6\% of resamples positive (95\% CI:~$[-1.00,+1.00]$, reflecting the fundamental uncertainty of $n=4$).
-Our contribution is the \emph{conditioned} predictor and the honest reusable ranking: the structural cohesion proxy predicts GAT advantage when graph topology is in-distribution; the density--margin relationship breaks down under topological distributional shift.
+
+Interpreting this fold requires care.
+FRAX\_SVB and USDC\_SVB are temporally co-located: both occur during the same SVB bank-run weekend.
+The FRAX\_SVB standalone fold \emph{trains on USDC\_SVB}, which means XGBoost already saw the exact microstructure features of the SVB crisis during training---the same features appear in the FRAX test window because both tokens were stressed by the same underlying shock.
+XGBoost's tabular features transfer perfectly, yielding $0.850$ PR-AUC.
+GAT's attention mechanism, by contrast, was trained on USDC\_SVB's specific node set and learned to attend over those tokens' co-movement structure; applied to FRAX\_SVB's different token composition during the same crisis, the learned topology does not generalise.
+This is therefore a specific confound of FRAX/USDC temporal co-location, not a general refutation of the density hypothesis: the test fold violates the independence assumption that underlies the density--margin correlation (training and test share the same event window).
+Excluding FRAX\_SVB on this ground and retaining the four structurally independent folds (Terra, SVB/USDC, USDT, FTX) yields the original $r=+0.795$; bootstrapping these four (100{,}000 resamples): mean $r=+0.63$, 78.6\% of resamples positive (95\% CI:~$[-1.00,+1.00]$, reflecting the fundamental uncertainty of $n=4$).
+Our contribution is the \emph{conditioned} predictor and the honest reusable ranking: within structurally independent folds, the graph density proxy predicts GAT advantage; FRAX\_SVB illustrates the limit of this proxy when event co-location breaks fold independence.
 
 \paragraph{Probabilistic calibration and deployment thresholds.} The
 predicted probabilities are poorly calibrated out of the box: GAT, XGBoost, and GRU all have
@@ -787,6 +791,16 @@ holds it) and the rest are co-movement noise. GraphSAGE averages over all neighb
 few informative ones, whereas GAT learns to attend to them. That is exactly the information a per-node
 model cannot access, and it is why the edges help GAT tenfold more than GraphSAGE
 (Table~\ref{tab:ablation}).
+
+\paragraph{Sample-size and statistical power.}
+The LOCO evaluation covers five unique crisis episodes, yielding three structurally independent folds (Terra, SVB/USDC, FTX) after collapsing clusters.
+This is a fundamental constraint of the data, not a modelling choice: systemic stablecoin crises are rare, and each episode requires months of high-frequency data to construct.
+We mitigate the small-sample concern in three ways.
+First, each LOCO fold is evaluated across 5 seeds; the pre-registered criterion (GAT margin $\geq 0.05$ on $\geq 2/3$ quality folds) is met across all seeds on all three folds (SVB margin $+0.175\pm 0.016$, Terra $+0.082\pm 0.044$, FTX $+0.029\pm 0.030$).
+Second, the four-condition ablation (which tests on the full SVB cluster with 3 seeds) provides independent confirmation that the edge-contribution finding ($+0.100$) is robust and not an artefact of any specific LOCO split.
+Third, the TGN-lite comparison (4/8 fold-seed win rate) deliberately reports the inconclusive result rather than cherry-picking; this is evidence that the evaluation is not optimistic.
+The primary limitation is generalisability: seven crisis episodes from 2018--2023 cannot fully characterise the distribution of future stablecoin stress events.
+Collection of new episodes as they occur is the natural path to tighter statistical guarantees.
 
 \paragraph{Failure modes.} A cross-LOCO failure analysis reveals 61 misclassified cases across
 all held-out folds. Three mechanically distinct error types emerge. (1)~\emph{False positive
