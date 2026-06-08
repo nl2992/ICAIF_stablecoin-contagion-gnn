@@ -1,0 +1,60 @@
+{
+  "n_episodes_total": 6,
+  "n_valid_for_corr": 4,
+  "pearson_r": 0.7953,
+  "pearson_p": 0.2047,
+  "spearman_r": 0.8,
+  "spearman_p": 0.2,
+  "high_density_mean_margin": 0.0672,
+  "low_density_mean_margin": 0.024,
+  "episodes": [
+    {
+      "pkl_stem": "UST_Terra",
+      "episode": "Terra_2022",
+      "n_nodes": 7,
+      "graph_density": 0.3602,
+      "gat_margin": 0.0878,
+      "in_loco": true
+    },
+    {
+      "pkl_stem": "USDC_SVB",
+      "episode": "SVB_2023",
+      "n_nodes": 6,
+      "graph_density": 0.3946,
+      "gat_margin": 0.0466,
+      "in_loco": true
+    },
+    {
+      "pkl_stem": "USDT_May2022",
+      "episode": "USDT_2018",
+      "n_nodes": 7,
+      "graph_density": 0.3491,
+      "gat_margin": 0.0452,
+      "in_loco": true
+    },
+    {
+      "pkl_stem": "BUSD_winddown",
+      "episode": "BUSD_2023",
+      "n_nodes": 3,
+      "graph_density": 0.1658,
+      "gat_margin": NaN,
+      "in_loco": true
+    },
+    {
+      "pkl_stem": "DAI_FTX",
+      "episode": "FTX_2022",
+      "n_nodes": 3,
+      "graph_density": 0.0802,
+      "gat_margin": 0.0028,
+      "in_loco": true
+    },
+    {
+      "pkl_stem": "FRAX_SVB",
+      "episode": "FRAX_SVB",
+      "n_nodes": 6,
+      "graph_density": 0.5462,
+      "gat_margin": NaN,
+      "in_loco": false
+    }
+  ]
+}

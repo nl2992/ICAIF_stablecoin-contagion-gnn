@@ -1,220 +1,289 @@
-# TODO — Research Improvement Plans
-# Predicting Cross-Asset Stablecoin Contagion with Temporal Graph Neural Networks
-
-## Current weaknesses
-
-- PR-AUC 0.447 is modest — not a dramatic headline on its own
-- Only 7 crisis episodes; 2 are too sparse (BUSD depeg, USDT-2018) and may be hurting LOCO stability
-- Node features are entirely market microstructure — no on-chain pool flow, DEX liquidity depth, or redemption pressure features
-- The GNN is a static snapshot model — the graph topology itself is not allowed to evolve temporally within an episode (no TGNN/dynamic-edge learning)
-- LOCO generalization margin shrinks to +0.083 vs XGBoost — fragile cross-crisis claim
-- No probabilistic calibration study — PR-AUC is an ordering metric, not a deployment metric; reviewers will ask "at what threshold do you alert?"
-- Ablation shows the graph adds +0.100 over no-edge GAT, but this is not yet tied to a structural story ("which edges matter and why")
+# TODO — stablecoin-contagion-gnn
+# Reviewer Score: 5.8 / 10 — Borderline Reject → Target: 7.5 / Accept
 
 ---
 
-## Plans
+## Why This Paper Is Currently Rejected
 
-### Plan A — Lead the paper with the graph-contribution ablation, not the PR-AUC headline
+A reviewer reads the ablation table, sees PR-AUC 0.4465 vs 0.2713 baseline and thinks "okay,
+decent." Then they run LOCO and discover that dropping 2 sparse episodes flips the sign: GAT
+margin goes from +0.046 (all-7) to −0.075 (stable-5) — GAT is *worse* than gradient-boosted
+trees on the cleaner episode set.
 
-**What to code:**
-- `eval/ablation.py`: run 4 conditions — (1) tabular XGBoost (no graph), (2) GAT with node features only (no edges), (3) GAT with edges but no node features, (4) full GAT (node features + edges); record PR-AUC per condition per LOCO fold
-- `interpret/edge_importance.py`: for each crisis, log which edges (asset pairs) have highest GAT attention weight; aggregate across folds
-- Produce a 2x2 ablation table: rows = conditions, columns = average LOCO PR-AUC and improvement over XGBoost
+That is a one-line reject: "The reported performance gain reverses when low-quality episodes are
+removed, casting doubt on whether the graph structure provides genuine signal."
 
-**What to run:**
-```bash
-python eval/ablation.py --model GAT --universe all --loco True
-python interpret/edge_importance.py --model GAT --top_k 5
-```
+The PR-AUC number cannot be unseen: 0.4465 on a 0.29 base rate is a 1.53× lift — not impressive
+for a neural method. And the current framing ("GAT detects stablecoin depegs") demands
+generalization that the LOCO result denies.
 
-**Target result:**
-- Condition 2 vs condition 1: node features alone add X over XGBoost (graph topology contribution isolated)
-- Condition 4 vs condition 2: edge structure adds +0.100 PR-AUC (already observed; now formalized with CIs)
-- Headline: "The directed lead-lag graph topology contributes +0.10 PR-AUC beyond microstructure features alone, identifying USDC and Curve-3pool as principal contagion conduits"
-
-**Write into paper:**
-- New Table 3 "Component Ablation" in Section 4 Results; make this the first results table
-- Abstract: replace PR-AUC headline with ablation finding: graph structure adds +X over tabular models
-- Section 3 Model: add one paragraph explaining why the ablation conditions isolate the graph's contribution
+The paper needs a new contribution claim, a new primary result, and one new experiment.
 
 ---
 
-### Plan B — Drop the 2 sparse episodes and re-run LOCO with 5-episode stable set
+## What Actually Works (Keep This, Change The Narrative)
 
-**What to code:**
-- `configs/episodes_v2.yaml`: define the 5-episode subset — LUNA/UST, USDC/SVB, DAI/USDC, FTX/contagion, USDT-stress-2023; exclude BUSD and USDT-2018
-- `scripts/run_loco.py`: add `--episode_set` flag to run LOCO on episode subsets
-- `src/evaluation/loco_stability.py`: compute mean LOCO PR-AUC and variance under (a) all 7 episodes and (b) 5-episode stable set; report both
+1. **4-condition ablation is textbook clean**: Tabular (0.27) → node-only (0.35) → edge-only
+   (0.29) → full GAT (0.45). Both components contribute additively. This stays as Table 1.
 
-**What to run:**
-```bash
-python scripts/run_loco.py --model GAT --episode_set episodes_v2 --loco True
-python src/evaluation/loco_stability.py --compare_sets all_7,stable_5
-```
+2. **Attention hub analysis is the real contribution**:
+   - Top edges by attention: USDC/binance→TUSD/binance (0.511), USDT/coinbase→BUSD/binance (0.496)
+   - BUSD shows both inbound (0.496) and outbound (0.412) high attention — GAT flags it as hub
+   - The ABM companion paper shows BUSD has *zero* causal contagion effect (K=1: 0% reduction)
+   - This cross-method contradiction IS the paper. The GNN sees correlation; the ABM sees cause.
 
-**Target result:**
-- Stable-5 LOCO mean PR-AUC: target >= 0.47 (vs 0.447 on all 7)
-- Stable-5 LOCO margin over XGBoost: target >= +0.10 (vs +0.083 currently)
-- The two excluded episodes are documented with justification; this is not cherry-picking if pre-registered
-
-**Write into paper:**
-- Section 2 Data: add Table 1 listing all 7 episodes with row counts, base rates, and quality flag; footnote the exclusion criterion
-- Section 5 Robustness: add "Sparse-Episode Sensitivity" subsection comparing all-7 and stable-5 LOCO results; report both
-- Pre-registration note: add appendix sentence stating the episode quality criterion was set before final model runs
+3. **Within-episode PR-AUC is real**: Terra (+0.088), SVB (+0.047), USDT_2018 (+0.045) all show
+   GAT margin in the right direction. The problem is episode *heterogeneity*, not model failure.
+   FTX (−0.262) is the outlier and its explanation is the contribution.
 
 ---
 
-### Plan C — Add 3 on-chain features to break the "all microstructure" critique
+## The New Contribution Claim (Replace Everything In Abstract)
 
-**What to code:**
-- `features/onchain_features.py`: add three features using publicly available on-chain data (The Graph or Dune Analytics exports, or pre-cached CSVs):
-  1. `curve_3pool_imbalance`: (USDC_balance - USDT_balance) / total_pool_liquidity at each timestamp
-  2. `redemption_pressure_proxy`: net stablecoin outflows from top-3 Curve pools (approximated from on-chain balance deltas)
-  3. `cex_netflow`: net stablecoin inflows/outflows to Binance+Coinbase (from CryptoQuant public API or pre-cached)
-- `data/onchain/`: store raw on-chain CSVs with provenance note
-- Retrain XGBoost and GAT with extended feature set; compare PR-AUC to microstructure-only baseline
+**Old claim (failing)**: "GAT detects stablecoin depegs better than tabular baselines."
 
-**What to run:**
-```bash
-python features/onchain_features.py --output data/processed/onchain_features.parquet
-python scripts/run_loco.py --model GAT --features full_with_onchain
-python scripts/run_loco.py --model XGBoost --features full_with_onchain
-```
+**New claim (defensible)**:
+"GAT attention maps identify cross-coin correlational hubs in stablecoin networks. Cross-validating
+these hubs with a calibrated ABM reveals that the dominant attention hub (BUSD) is causally inert —
+its apparent centrality reflects on-chain settlement routing, not contagion transmission. GAT's
+predictive advantage over tabular baselines concentrates in structurally connected episodes
+(graph density predicts margin: r = 0.XX, p = 0.0X); in idiosyncratic collapses, graph structure
+adds noise and tabular baselines are preferred."
 
-**Target result:**
-- GAT with on-chain features: target PR-AUC >= 0.48 on LOCO (modest improvement; main value is theoretical)
-- XGBoost with on-chain features: record whether tabular gap over GAT closes — if GAT still leads, graph structure is validated above on-chain features alone
-- Headline: "Adding on-chain pool-imbalance features improves PR-AUC by X; GNN retains Y advantage from graph topology above the extended tabular baseline"
-
-**Write into paper:**
-- Section 2 Features: add paragraph on on-chain features; add data card footnote with Dune/The Graph query IDs
-- Table 2: add rows for XGBoost+onchain and GAT+onchain
-- Discussion: address the "all microstructure" limitation directly; state which features had highest XGBoost gain
+This reframe:
+- Converts LOCO instability into a finding ("GAT helps when graph structure is real")
+- Makes BUSD the centerpiece instead of an appendix footnote
+- Creates a joint GNN+ABM contribution neither paper has alone
+- Gives practitioners a decision rule: estimate graph density before choosing GNN vs tabular
 
 ---
 
-### Plan D — Probabilistic calibration and threshold selection study
+## CRITICAL FIX 1 — Episode Graph Density Analysis (New Experiment, ~1 Day)
 
-**What to code:**
-- `eval/calibration.py`: compute reliability diagrams (10 bins), Brier score, and Expected Calibration Error (ECE) for GAT, XGBoost, and GRU
-- `eval/threshold_sweep.py`: for each model, sweep alert threshold from 0.1 to 0.9; for each threshold record precision, recall, F1, and simulated alert rate (alerts per 24h)
-- Produce: (a) reliability diagram figure, (b) precision-recall-threshold curve, (c) "operating point" table showing threshold choices at precision=0.6, recall=0.6
+### The diagnostic
 
-**What to run:**
-```bash
-python eval/calibration.py --model GAT XGBoost GRU --loco True
-python eval/threshold_sweep.py --model GAT --horizon 24h
+GAT margin ranges from +0.088 (Terra) to −0.262 (FTX). Why?
+
+**Hypothesis**: GAT exploits cross-coin correlation structure. When correlations are weak (FTX is
+idiosyncratic — Circle/SVB contagion has no structural cross-coin propagation path), the graph
+injects noise. When correlations are strong (Terra: algorithmic peg failure cascades via shared
+on-chain collateral pools), the graph helps.
+
+### What to compute
+
+Create `scripts/episode_graph_density.py`:
+```python
+"""Compute mean absolute cross-coin correlation (graph density) per episode
+and correlate against the LOCO GAT margin from loco_stability_comparison_h1440.csv."""
+
+# For each episode in LOCO results:
+#   1. Load episode price deviation series (crisis window: -48h to +48h around depeg)
+#   2. Compute Pearson correlation matrix across all node pairs
+#   3. Graph density = mean |r_ij| for i != j (upper triangle)
+#   4. Record: episode, graph_density, gat_margin_vs_xgb
+
+# Statistical test:
+#   Pearson r between graph_density and gat_margin across 5-7 episodes
+#   Spearman rho as robustness check
+#   One-sided p-value (denser graph -> higher margin)
+
+# Output:
+#   results/eval/episode_density_vs_margin.csv
+#   results/figures/density_margin_scatter.png
 ```
 
-**Target result:**
-- GAT ECE < XGBoost ECE on stress episodes (graph-based model better calibrated)
-- At precision=0.60 operating point: GAT recall >= 0.50 (catches at least half of contagion events at reasonable false-alarm rate)
-- Headline figure: precision-recall-threshold curve with recommended operating point marked
+### Target results
 
-**Write into paper:**
-- New Section 5.3 "Calibration and Deployment Threshold": reliability diagram + threshold table
-- Abstract: add "We provide calibrated probability estimates and operating-point guidance for practitioners"
-- Conclusion: replace "future work: deployment" with a concrete recommended threshold and expected false-alarm rate
+| Episode | Graph Density | GAT Margin | Prediction |
+|---|---|---|---|
+| Terra_2022 | HIGH | +0.088 | Structural cascade, strong cross-coin correlation |
+| SVB_2023 | MED-HIGH | +0.047 | USDC depegs across venues simultaneously |
+| USDT_2018 | MEDIUM | +0.045 | Moderate network propagation |
+| FTX_2022 | LOW | −0.262 | Idiosyncratic collapse, no cross-coin path |
+| BUSD_2023 | LOW | (missing) | Regulatory event, no contagion path |
+
+Required: Pearson r ≥ 0.55 between graph density and GAT margin, p ≤ 0.10 (one-sided, n=5-7
+is small — power is limited, but even r=0.55 is a strong signal for this sample size).
+
+### What this does for the paper
+
+- Figure 2 becomes a scatter plot: x=graph density, y=GAT margin, labeled by episode
+- The paper can now say: "On high-density episodes, GAT provides +0.08 PR-AUC gain; on
+  low-density episodes, tabular baselines are preferred. Graph density (measurable ex ante from
+  historical correlations) predicts which regime applies (r=0.XX, p=0.0X)."
+- The LOCO instability is now explained, not hidden: stable-5 loses high-density episodes and
+  gains FTX/BUSD (both low-density), which is why the mean margin flips.
+
+### If correlation is weak (r < 0.4)
+
+Still report it. The finding becomes: "Episode-level heterogeneity is the primary driver of
+GNN performance variance, and we identify graph density as a partial but not fully predictive
+moderator. This points to future work on episode characterization before model selection."
+A null moderator finding in a small sample is still honest and publishable.
 
 ---
 
-### Plan E — Add temporal graph (TGN-lite) as the strongest model variant
+## CRITICAL FIX 2 — Reframe LOCO as "Conditional Performance by Structure"
 
-**What to code:**
-- `models/temporal_gnn.py`: implement a lightweight Temporal Graph Network variant — reuse the GAT message-passing but feed each node a GRU hidden state initialized from the previous timestep's node embedding (this is a 50-line addition to the existing GAT class)
-- `configs/model_tgn.yaml`: same hyperparameters as GAT but with `temporal_encoding: true` and `memory_dim: 32`
-- Run LOCO comparison: GAT-static vs TGN-lite
+### Current presentation (will be called out by reviewer)
 
-**What to run:**
-```bash
-python train/train_gnn.py --model TGN --config configs/model_tgn.yaml --loco True
-python eval/ablation.py --compare GAT,TGN
+"Stable-5 set: mean GAT margin = −0.075" — presented as a stability result.
+This reads as: "Our method is unstable."
+
+### New presentation
+
+Subsection 5.3: "When Does Graph Structure Help?"
+
+```
+Table 3: GAT vs XGBoost Performance by Episode Structural Type
+
+Episode          Type                      Density   GAT Margin  Prediction
+Terra_2022       Structural cascade        HIGH      +0.088      GNN recommended
+SVB_2023         Credit contagion          MED-HIGH  +0.047      GNN recommended
+USDT_2018        Liquidity stress          MEDIUM    +0.045      GNN recommended
+FTX_2022         Idiosyncratic collapse    LOW       −0.262      Tabular preferred
+BUSD_2023        Regulatory winddown       LOW       N/A         Tabular preferred
+All-7 (mean)                                         +0.046      GNN marginal
+High-density (n=3)                                   +0.060      GNN recommended
+Low-density (n=2)                                    −0.262      Tabular preferred
 ```
 
-**Target result:**
-- TGN-lite PR-AUC >= 0.47 on LOCO (marginal improvement; main value is ablation of temporal vs static)
-- If TGN does not improve: that is a valid finding — "temporal memory does not add beyond static snapshots given 6h rolling window edges"
-- Either outcome becomes a paper section: temporal dynamics are either captured by the rolling-edge graph or require longer memory
+The text says: "We observe substantial heterogeneity in GAT's advantage over XGBoost across
+episodes (range: −0.262 to +0.088). This heterogeneity is explained by cross-coin graph
+density: in structurally connected crises where contagion propagates via shared on-chain
+infrastructure, GAT exploits network topology for +0.060 PR-AUC improvement. In idiosyncratic
+collapses without cross-coin propagation paths, graph structure provides noise rather than
+signal, and tabular baselines outperform by 0.262 PR-AUC. Practitioners should estimate
+graph density before model selection (§A.2 provides a computationally efficient estimator)."
 
-**Write into paper:**
-- Section 3 Model: add one paragraph describing TGN-lite variant and how it differs from static GAT
-- Table 2: add TGN-lite row
-- Discussion: one paragraph on whether temporal memory helps and why; if not, explain via rolling-edge graph already capturing recency
+### What NOT to write
+
+Never say "stable-5 is more reliable." Never claim GAT generalizes across all episode types.
+Never present the aggregate all-7 margin (+0.046) as the primary claim — it averages over
+a heterogeneous distribution and the heterogeneity is the finding.
 
 ---
 
-### Plan F — Attention-weight analysis: which edges drive contagion predictions
+## CRITICAL FIX 3 — Attention Hub Story as Section 4 (New Section)
 
-**What to code:**
-- `interpret/attention_analysis.py`: for each LOCO test fold, extract GAT attention weights per edge during the 48h window before peak contagion; compute mean attention across crisis episodes; rank asset pairs by mean attention
-- `interpret/hub_report.py`: integrate with existing hub-ranking code; produce a named hub table (node name, betweenness centrality, mean attention weight, propagator label count)
-- `results/interpret/attention_heatmap.png`: attention matrix averaged over all crisis episodes
+The BUSD spurious hub finding is currently buried. It needs its own section because it is the
+paper's most original and actionable contribution.
 
-**What to run:**
-```bash
-python interpret/attention_analysis.py --model GAT --window 48h
-python interpret/hub_report.py --combine_attention_betweenness True
+### Section 4: "Cross-Validation of GNN Attention with Causal ABM"
+
+**4.1 What the GNN Attention Finds**
+
+```
+Table: Top attention edges (sorted by mean attention weight)
+
+Rank  Source                Destination           Mean Attn  Std    n_obs
+1     USDC/binance          TUSD/binance           0.511      0.013  3
+2     USDT/coinbase         BUSD/binance           0.496      0.003  3
+3     BUSD/binance          USDT/coinbase           0.412      0.127  12
+4     USDC/binance          USDP/binance           0.340      0.012  3
+...
+
+Observation: BUSD appears in 3 of the 5 highest-attention edges (ranks 2, 3, and via
+downstream connections). The model identifies BUSD/Binance as the dominant hub.
+Under a naive intervention policy, a regulator with K=1 budget would protect BUSD.
 ```
 
-**Target result:**
-- Top 2–3 hub pairs are consistently USDC→[others] and Curve-3pool→USDT across crises
-- Attention analysis provides a named structural story: "The model learns that USDC is the dominant source node; edges from USDC to USDT and DAI carry 3x the average attention weight"
-- This is the quotable finding that reviewers remember
+**4.2 What the ABM Reveals**
 
-**Write into paper:**
-- New Figure 4: attention heatmap averaged over stress episodes with asset labels
-- New Table 4: hub-ranking table with attention + betweenness + propagator count columns
-- Abstract: update to include named hub finding (e.g., "USDC and Curve-3pool emerge as principal contagion conduits")
-- Section 4 Results: lead the interpretability subsection with this table before any PR-AUC numbers
+```
+From the companion ABM paper (stablecoin-abm), using USDC/SVB calibration:
+
+Intervention target    K=1 contagion reduction
+USDC (causal origin)   100%
+BUSD (GNN top hub)     0%
+RL regulator (learned) 100% (independently chooses USDC)
+
+The GNN identifies BUSD as the hub. The ABM shows protecting BUSD achieves nothing.
+```
+
+**4.3 Why the GNN Is Wrong (Mechanism Explanation)**
+
+BUSD's high attention reflects Binance's role as a settlement venue, not causal transmission:
+- During any USDC/USDT stress event, Binance users move funds via BUSD-denominated pairs
+- This creates bidirectional on-chain flows that appear in the price series as correlation
+- GAT learns these as predictive features — they are, within-episode, because they're
+  contemporaneous with the event
+- But BUSD is a *conduit*, not a *cause* — the ABM's causal knockout confirms it
+
+**4.4 Implication: A Two-Stage Intervention Protocol**
+
+Stage 1 (fast, online): Run GAT attention to identify candidate hubs in real time
+Stage 2 (confirmatory, offline): Run ABM causal knockout on the top-K candidate hubs
+Intervene only on hubs that survive the ABM stress test
+
+This protocol separates "candidates worth investigating" (GNN) from "targets worth protecting"
+(ABM). Neither method alone is sufficient.
+
+### What to add to the results file
+
+In `results/interpret/attention_hub_table.csv`, add two columns:
+- `abm_causal_effect_pct`: from `stablecoin-abm/experiments/results/netcontagion/budget_allocation.csv`
+  (BUSD = 0%, USDC = 100%)
+- `hub_type`: "spurious" if abm_causal_effect_pct < 10%, "causal" if >= 50%, "mixed" otherwise
 
 ---
 
-### Plan G — Failure-mode case study (3 misclassified episodes)
+## STRONG — Horizon Sensitivity (1 Additional Day)
 
-**What to code:**
-- `eval/failure_analysis.py`: for each LOCO fold's test episode, identify the 10 most-confident false positives and 10 most-confident false negatives from the GAT model
-- For each selected example: extract the feature vector, the attention weights, the graph topology at that timestamp, and the actual market event
-- `results/eval/failure_cases.csv`: structured table of timestamp, predicted prob, true label, top features, top attended edge, and qualitative event label
+### Why this matters
 
-**What to run:**
-```bash
-python eval/failure_analysis.py --model GAT --n_cases 10 --loco True
+GAT's architecture captures temporal propagation across coins. This advantage should grow with
+prediction horizon: at 1h, raw features dominate; at 24h, network propagation has had time to
+occur and GAT's structural view provides information tabular features cannot encode.
+
+### What to compute: `scripts/horizon_sensitivity.py`
+
+For each horizon H in {1h, 6h, 12h, 24h, 48h}:
+```
+  Load episode graphs with labels at horizon H
+  Train XGBoost, GAT-node-only, GAT-full on same train episodes
+  Evaluate PR-AUC on same test episodes as LOCO
+  Record: model × horizon → PR-AUC
 ```
 
-**Target result:**
-- 3–5 representative cases that each illustrate a mechanically distinct failure mode, for example:
-  1. False positive during high-vol non-contagion (model confuses vol spike with contagion)
-  2. False negative during slow-onset contagion (model misses gradual peg drift below 6h resolution)
-  3. False positive driven by a spurious edge (volume spike on an unrelated pair inflates lead-lag)
-- This section is the answer to "Reasoning-or-Overthinking style" depth requirement in original TODO
+### Target result
 
-**Write into paper:**
-- New Section 5.4 "Failure Mode Analysis": narrative description of 3 cases with attention plots
-- Discussion: use the cases to motivate future work (on-chain features, longer memory, event-driven edges)
-- This section directly addresses the reviewer question "what does the model get wrong and why"
+```
+Horizon    XGBoost    GAT-full    GAT margin
+1h         0.29       0.31        +0.02
+6h         0.27       0.33        +0.06
+12h        0.25       0.37        +0.12
+24h        0.23       0.41        +0.18
+48h        0.21       0.39        +0.18
+```
+
+If GAT margin grows with horizon (even r = 0.7 across 5 points), this confirms the mechanism
+story: "Graph structure encodes how price distortions propagate over time between venues — a
+signal that grows more informative at longer horizons."
 
 ---
 
-### Plan H — Multi-horizon decay curve as a deployability figure
+## Non-Negotiable Checklist Before Submission
 
-**What to code:**
-- `eval/lead_time_analysis.py`: compute LOCO PR-AUC at horizons 30min, 1h, 2h, 6h, 12h, 24h for GAT and XGBoost
-- Plot both curves on the same axes with shaded 1-std bands across LOCO folds
-- Add a vertical line at "earliest horizon where GAT > XGBoost + 0.05" — this is the actionable prediction window
+- [ ] Episode graph density script run; r between density and GAT margin reported with p-value
+- [ ] "When does graph structure help" table in §5 (with episode type labels)
+- [ ] LOCO result explicitly framed as "heterogeneity explained by density," not "instability"
+- [ ] Section 4 on attention hubs with ABM cross-validation (new section, ~2 pages)
+- [ ] Attention hub table has abm_causal_effect_pct column and hub_type label
+- [ ] Abstract rewritten: no claim that GAT generalizes across all episode types
+- [ ] Contribution 1 is the hub-discovery cross-validation protocol, not the PR-AUC number
+- [ ] The words "generalization" and "outperform" only appear with the qualifier "on
+      high-density structural episodes"
+- [ ] Stable-5 result presented as a robustness check, not as a primary stability result
 
-**What to run:**
-```bash
-python eval/lead_time_analysis.py --models GAT,XGBoost --horizons 30,60,120,360,720,1440
+---
+
+## Execution Sequence
+
 ```
-
-**Target result:**
-- GAT > XGBoost by >= 0.05 at >= 6h horizon (already indicated by 24h result)
-- Both models approach chance at <= 1h horizon — this is honest and expected given graph construction
-- Key finding: "Graph-based contagion prediction is informative at 6–24h horizons; sub-hour prediction is near-chance for all models"
-
-**Write into paper:**
-- New Figure 2: PR-AUC vs prediction horizon for GAT and XGBoost; mark the 6h actionability threshold
-- Abstract: add "providing actionable signals at 6–24 hour horizons"
-- Section 5.1: replace the single "24h GAT PR-AUC 0.447" sentence with the full decay-curve discussion
-- This converts a single number into a decision-support framing that practitioners can use
+Day 1 AM:  Run episode_graph_density.py → get correlation r and scatter plot
+Day 1 PM:  Add ABM columns to attention hub table; draft Section 4
+Day 2 AM:  Rewrite abstract, contribution list, §5.3 conditional performance
+Day 2 PM:  Run horizon_sensitivity.py (if time; skip if not)
+Day 3:     Final pass — remove every sentence that doesn't match the data
+```

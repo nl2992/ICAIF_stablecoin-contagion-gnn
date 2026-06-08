@@ -1,0 +1,7 @@
+pkl_stem,episode,n_nodes,graph_density,gat_margin,in_loco
+UST_Terra,Terra_2022,7,0.3602,0.0878,True
+USDC_SVB,SVB_2023,6,0.3946,0.0466,True
+USDT_May2022,USDT_2018,7,0.3491,0.0452,True
+BUSD_winddown,BUSD_2023,3,0.1658,,True
+DAI_FTX,FTX_2022,3,0.0802,0.0028,True
+FRAX_SVB,FRAX_SVB,6,0.5462,,False
