@@ -14,8 +14,7 @@
 
 \begin{document}
 
-\title{Predicting Cross-Asset Stablecoin Contagion with Temporal Graph
-Neural Networks}
+\title{Predicting Cross-Asset Stablecoin Contagion with Graph Attention Networks}
 
 \author{Anonymous Author(s)}
 \affiliation{\institution{Anonymous Institution}\country{Anonymous}}
@@ -27,24 +26,29 @@ trapped at the collapsing Silicon Valley Bank. Within hours, \emph{other} dollar
 wobbled too. This paper asks a concrete, operational question. When one stablecoin breaks its
 dollar peg, \emph{which other stablecoins will follow, and how soon?} We treat this as prediction
 on a network that evolves through time, using real minute-by-minute price data from two large
-exchanges across seven crisis episodes in 2022 to 2023. We compare a full ladder of models, from
-trivial baselines, through gradient-boosted trees and a recurrent network, to temporal graph
-neural networks (GNNs), under an evaluation protocol carefully designed to stop a model from
-``cheating'' by training and testing on the same crisis. Two findings stand out. First, contagion
-is essentially \emph{unpredictable} at horizons of a few hours, but becomes predictable at a
-one-day horizon, where a graph-attention network beats every non-graph model by $0.18$ in
-precision-recall AUC (averaged over five random seeds). Second, a four-condition ablation shows that topology and microstructure are complementary:
-graph edges alone (with features zeroed) collapse to the base rate, while node features alone
-recover only half the achievable gain; the $+0.10$ PR-AUC from adding directed edges accrues
-specifically because attention can concentrate on the few informative neighbour edges, which
-uniform aggregation cannot. Attention-weight analysis names the dominant contagion channel:
-the USDC/Binance\,$\to$\,TUSD/Binance edge carries $1.9\times$ average attention during the
-SVB crisis, with USDC consistently emerging as the principal source node. We deliver an
-interpretable, exportable hub ranking for each crisis and provide calibrated deployment
-guidance, including operating-point thresholds for risk practitioners.
+exchanges across seven crisis episodes in 2022 to 2023. We compare a full ladder of models---from trivial baselines through gradient-boosted trees
+and a recurrent network, to graph neural networks---under an evaluation protocol carefully
+designed to stop a model from ``cheating'' by training and testing on the same crisis.
+Three findings stand out. First, contagion is essentially \emph{unpredictable} at horizons
+of a few hours, but becomes predictable at a one-day horizon, where a \textbf{graph-attention
+network (GAT)} beats every non-graph model by $0.18$ in precision-recall AUC (averaged over
+five random seeds). Second, a four-condition ablation shows that topology and microstructure
+are complementary: graph edges alone (with features zeroed) collapse to the base rate, while
+node features alone recover only half the achievable gain; the $+0.10$ PR-AUC from adding
+directed edges accrues specifically because attention can concentrate on the few informative
+neighbour edges, which uniform aggregation cannot. Third, augmenting the static GAT with an
+explicit per-node temporal memory (TGN-lite) adds only $+0.008$ mean PR-AUC with a 50\% fold
+win rate---the 6h rolling-edge graph already encodes most temporal dynamics, so explicit
+temporal memory is an exploratory ablation rather than a core contribution.
+Attention-weight analysis names the dominant contagion channel: the USDC/Binance\,$\to$\,TUSD/Binance
+edge carries $1.9\times$ average attention during the SVB crisis.
+We deliver an interpretable, exportable hub ranking for each crisis and provide deployment
+guidance including operating-point thresholds and calibration diagnostics: raw-output ECE is
+$0.23$--$0.26$ across all three leading models, indicating poor out-of-box calibration;
+we recommend isotonic recalibration before operational use.
 \end{abstract}
 
-\keywords{stablecoins, financial contagion, temporal graph neural networks, graph attention,
+\keywords{stablecoins, financial contagion, graph attention networks, graph neural networks,
 systemic risk, leakage-safe evaluation, decentralized finance}
 
 \maketitle
