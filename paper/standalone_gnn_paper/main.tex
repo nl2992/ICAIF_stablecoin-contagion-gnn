@@ -450,7 +450,9 @@ seeds. Graph attention (GAT) clears the base rate by a wide, stable margin, whil
 \begin{table}[t]
 \caption{Full model ladder on the held-out SVB cluster at 24h. PR-AUC and ROC-AUC are the primary
 metrics. The base rate is $0.293$. GNN rows report 5-seed means; all others are single-seed.
-Only the two graph models show ROC-AUC clearly above chance.}
+Only the two graph models show ROC-AUC clearly above chance.
+Raw output ECE is $0.23$--$0.26$ (poorly calibrated out-of-box); isotonic recalibration
+reduces GAT ECE to $0.006$ while preserving PR-AUC ranking---apply recalibration before operational use.}
 \label{tab:full}
 \small
 \begin{tabular}{lrrr}
@@ -658,17 +660,9 @@ Although BUSD/Binance receives mean attention $\bar\alpha=0.412$ (rank 3 among a
 USDC, which receives the highest outgoing attention of any single node ($\bar\alpha=0.511$ for the USDC/Binance\,$\to$\,TUSD/Binance edge), is confirmed as the \textbf{causal hub}: the ABM's greedy optimal, ABM-guided, and RL-regulator strategies all independently select USDC as the $K=1$ intervention target.
 This cross-validation---correlational GNN ranking feeding into causal ABM intervention---is the main contribution of Section~\ref{sec:interp}: the pipeline catches the false positive that a na\"{i}ve hub-protection strategy would have missed.
 
-\paragraph{Graph structure and episode density: a qualified hypothesis.}
-The LOCO reversal (stable-5 GAT margin falling from $+0.046$ to $-0.075$ when removing BUSD) initially suggests episode graph density drives GAT advantage.
-Across the four non-degenerate leave-one-out folds, the mean absolute pairwise Pearson correlation among node price deviation series (a structural cohesion proxy) correlates $r=+0.795$ with the GAT-vs-XGBoost PR-AUC margin ($n=4$; $p=0.205$, statistically inconclusive).
-High-density episodes (Terra, SVB) show mean GAT margin $+0.067$; the low-density FTX episode has margin $+0.003$---consistent with the prediction that attention mechanisms provide structural advantage only when node deviations are genuinely coupled.
-BUSD's removal from the evaluation set increases mean episode density and therefore \emph{reverses} the apparent LOCO finding from negative to positive.
-
-To test whether the density--margin relationship generalises, we run FRAX\_SVB as a fifth standalone LOCO fold (custom cluster map isolating FRAX\_SVB from its natural co-cluster with USDC\_SVB).
-FRAX\_SVB has the highest graph density of all episodes ($\rho=0.546$) and is mechanistically similar to USDC\_SVB (both are bank-reserve de-peg events during the SVB crisis).
-The fold result is strongly negative: XGBoost PR-AUC $=0.850$, GAT PR-AUC $=0.426$, margin $=-0.424$---GAT loses by a large margin despite high episode density.
-
-Interpreting this fold requires care: FRAX\_SVB and USDC\_SVB are temporally co-located, so the FRAX\_SVB standalone fold \emph{trains on USDC\_SVB}. XGBoost's tabular features transfer perfectly ($0.850$ PR-AUC) because both tokens were stressed by the same underlying shock. GAT's attention topology, trained on USDC\_SVB's node set, does not generalise to FRAX\_SVB's different composition. Excluding FRAX\_SVB and retaining the four structurally independent folds (Terra, SVB/USDC, USDT, FTX) restores $r=+0.795$; this fold illustrates the density proxy's limit when event co-location breaks fold independence.
+\paragraph{Graph structure and episode density.}
+A structural cohesion proxy (mean pairwise Pearson correlation among node deviations) correlates $r=+0.795$ with the GAT-vs-XGBoost PR-AUC margin across the four non-degenerate folds ($p=0.205$, inconclusive at $n=4$); high-density episodes (Terra, SVB) show mean GAT margin $+0.067$ while the low-density FTX fold yields $+0.003$.
+A fifth FRAX\_SVB fold (co-located with USDC\_SVB) reverses to $-0.424$ because XGBoost's tabular features transfer perfectly ($0.850$) when both events share the same underlying shock; GAT's topology, trained on USDC\_SVB's node set, does not generalise to FRAX\_SVB's different composition---illustrating the density proxy's limit when event co-location breaks fold independence.
 
 
 
@@ -753,8 +747,10 @@ XGBoost, pinning the advantage to graph structure rather than feature domain. At
 the mechanism: the USDC\,$\to$\,TUSD channel carries $1.9\times$ average attention during the SVB
 crisis, with USDC as the dominant contagion source node. Adding explicit temporal memory
 (TGN-lite) provides only marginal gains ($+0.008$ LOCO PR-AUC), consistent with the 6h rolling-edge
-graph already encoding most relevant temporal dynamics. Practitioners should apply isotonic
-recalibration before deployment since raw probabilities carry ECE $0.23$--$0.26$. Three caveats
+graph already encoding most relevant temporal dynamics. Practitioners should apply isotonic recalibration before deployment: raw ECE is
+$0.23$--$0.26$; after 5-fold isotonic recalibration the ECE drops to
+$0.006$--$0.061$ and PR-AUC is preserved (GAT $+0.014$), confirming that the
+ranking signal is real and calibration is a separable post-processing step. Three caveats
 bound the claim: seven episodes on two exchanges (two too sparse to carry signal); lead-lag edges
 can over-credit a thinly traded coin that only \emph{appears} to lead; and all 30 LOCO false
 positives concentrate on a single node (BUSD during FTX), driven by regulatory co-movement the
