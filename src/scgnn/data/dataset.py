@@ -77,15 +77,24 @@ def tabular_from_episodes(names: List[str], horizon: int, feat_names: List[str],
 
 def to_pyg_snapshots(b: dict, horizon: int):
     """Yield (snapshot_idx, Data) for a built episode, with per-node label + active mask."""
+    import os
     import torch
     from torch_geometric.data import Data
     X = b["X"]; active = b["active"]; y = b["labels"][horizon]
     origin = b["origin"]; node_strs = b["node_strs"]
     origin_idx = node_strs.index(origin) if origin in node_strs else -1
+    # Degree-preserving edge-rewiring null (referee test): when SCGNN_REWIRE_SEED is
+    # set, permute edge destinations to destroy the specific directed lead-lag
+    # topology while preserving edge count, source out-degrees, and edge attributes.
+    _rewire_seed = os.environ.get("SCGNN_REWIRE_SEED")
     for si, snap in enumerate(b["snapshots"]):
         x = torch.tensor(X[si], dtype=torch.float32)
         ei = torch.tensor(snap["edge_index"], dtype=torch.long)
         ea = torch.tensor(snap["edge_attr"], dtype=torch.float32)
+        if _rewire_seed is not None and ei.shape[1] > 1:
+            g = torch.Generator().manual_seed(int(_rewire_seed) + si + int(ei.shape[1]))
+            ei = ei.clone()
+            ei[1] = ei[1][torch.randperm(ei.shape[1], generator=g)]
         yt = torch.tensor(y[si], dtype=torch.float32)
         mask = torch.tensor(active[si], dtype=torch.bool)
         if origin_idx >= 0:

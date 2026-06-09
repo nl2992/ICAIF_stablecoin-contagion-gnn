@@ -39,3 +39,13 @@ coverage.xml
 
 # obsolete synthetic arrays (real data lives in data/processed/tabular and graphs)
 data/processed/*.npy
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.out
+*.log
+*.synctex.gz
+*.fdb_latexmk
+*.fls

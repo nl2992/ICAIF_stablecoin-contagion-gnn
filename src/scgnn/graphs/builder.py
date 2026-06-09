@@ -205,6 +205,17 @@ def graph_to_pyg(
                 attr.get("shared_lp_pct", 0.0),
             ])
 
+    # Degree-preserving edge-rewiring null (referee test). When the env var
+    # SCGNN_REWIRE_SEED is set, permute edge destinations to destroy the specific
+    # directed lead-lag topology while preserving edge count, source out-degrees,
+    # and the edge-attribute multiset. If the GAT's gain survives rewiring, it came
+    # from having edges; if it collapses, it came from the genuine topology.
+    import os as _os
+    _rw = _os.environ.get("SCGNN_REWIRE_SEED")
+    if _rw is not None and len(edges_dst) > 1:
+        _rng = np.random.default_rng(int(_rw) + len(edges_dst) + int(sum(edges_src)))
+        edges_dst = np.asarray(edges_dst)[_rng.permutation(len(edges_dst))].tolist()
+
     x = torch.tensor(node_feature_matrix, dtype=torch.float32)
     if edges_src:
         edge_index = torch.tensor([edges_src, edges_dst], dtype=torch.long)
