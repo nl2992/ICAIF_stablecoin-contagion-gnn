@@ -33,7 +33,7 @@ full model ladder, from trivial baselines through gradient-boosted trees to grap
 networks, under a leakage-safe protocol that prevents a model from training and testing on the same
 crisis. Three findings stand out. (i)~Contagion is essentially \emph{unpredictable} at horizons of a
 few hours but becomes predictable at one day, where a \textbf{graph-attention network (GAT)} beats
-every non-graph model by $+0.18$ PR-AUC (five-seed mean). (ii)~A four-condition ablation shows
+every non-graph model by $+0.175$ PR-AUC (five-seed mean). (ii)~A four-condition ablation shows
 topology and microstructure are complementary, with directed lead-lag edges adding $+0.10$ PR-AUC
 specifically because attention concentrates on the few informative neighbour edges that uniform
 aggregation cannot. (iii)~The model exports an interpretable per-crisis \textbf{hub ranking}, but we
@@ -458,8 +458,8 @@ ablation.
 
 \paragraph{Operational precision under an alert budget}
 Under a fixed alert budget, GAT precision@10 $= 0.40$ ($2.7\times$ the base rate of $0.293$)
-while XGBoost precision@10 $= 0.00$; at $k{=}25$, GAT retains $0.32$ lift, XGBoost remains $0.00$.
-A risk desk with a tight alert budget gains real operating lift from GAT; XGBoost provides no triage signal.
+while XGBoost precision@10 $= 0.00$. At $k{=}25$, GAT retains $0.32$ lift, XGBoost remains $0.00$.
+A risk desk with a tight alert budget gains real operating lift from GAT. XGBoost provides no triage signal.
 
 \paragraph{The harder test. Leave-one-cluster-out} In LOCO, each cluster is held out in turn, the
 strictest test of generalization to an unseen crisis type. Table~\ref{tab:loco} reports multi-seed
