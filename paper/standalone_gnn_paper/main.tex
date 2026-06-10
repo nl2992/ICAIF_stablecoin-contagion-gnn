@@ -582,7 +582,34 @@ b_j=\sum_{s\neq j\neq u}\frac{\sigma_{su}(j)}{\sigma_{su}},
 where $\sigma_{su}$ is the number of shortest paths from $s$ to $u$ and $\sigma_{su}(j)$ the number
 of those passing through $j$. A node with high $b_j$ sits on many routes through the network. The
 third is a \emph{propagator label} computed directly from raw prices, so that it is not circular
-with the model. For the USDC/SVB crisis the top-ranked hub is \textbf{BUSD}.
+with the model. For the USDC/SVB crisis the exported hub score ranks \textbf{BUSD} first.
+
+Crucially, the correlational measures do not even agree with \emph{each other}
+(Table~\ref{tab:hubreconcile}): undirected betweenness crowns the co-mover BUSD,
+occlusion already pulls toward USDC, and the directed attention weights (next
+paragraph) name USDC outright. The exported score, dominated by betweenness, inherits
+its error, which is exactly the disagreement only the causal knockout can settle.
+
+\begin{table}[t]
+\caption{The hub ranking is correlational, and the correlational measures disagree
+\emph{with each other} (USDC/SVB crisis). Undirected betweenness crowns the co-mover
+BUSD; occlusion partly recovers USDC; directed attention names the true source USDC;
+only the causal knockout is decisive. Each column normalised to its maximum.}
+\label{tab:hubreconcile}
+\small
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{lrrrr}
+\toprule
+Venue & Between. & Occlusion & Atten.$^\dagger$ & Causal $\Delta$ \\
+\midrule
+BUSD & \textbf{1.00} & \textbf{1.00} & 0.41 & \textbf{0\%} \\
+USDC & 0.00 & 0.85 & \textbf{0.51} & \textbf{100\%} \\
+TUSD & 0.00 & 0.53 & --- & --- \\
+DAI  & 0.00 & 0.00 & --- & 98\% \\
+\bottomrule
+\multicolumn{5}{l}{\footnotesize $^\dagger$Top outgoing-edge mean attention $\bar\alpha$ (network avg.\ ${\approx}0.27$).}
+\end{tabular}
+\end{table}
 
 Examining the raw attention weights directly provides a more granular view of which
 \emph{edges} the model prioritizes. Over the 48-snapshot window before the SVB peak, we extract
@@ -601,12 +628,15 @@ the top hub is actually \emph{causally} responsible, and what happens to a regul
 merely correlational ranking, is a distinct question that requires an intervenable model.
 
 \paragraph{Cross-validating hub rankings with a causal ABM}
-To answer this question, we consume the exported attention ranking as the input to a calibrated agent-based contagion model (companion paper).
-The ABM allows us to simulate targeted interventions, which venue to backstop at a budget of $K$ protected nodes, and measure the resulting contagion reduction.
-The finding is unambiguous. \textbf{BUSD is a spurious hub.}
-Although BUSD/Binance receives mean attention $\bar\alpha=0.412$ (rank 3 among all edges, $1.5\times$ the network average), protecting BUSD alone ($K=1$) produces \emph{zero} contagion reduction in the ABM, versus $100\%$ contagion reduction when USDC is protected.
-USDC, which receives the highest outgoing attention of any single node ($\bar\alpha=0.511$ for the USDC/Binance\,$\to$\,TUSD/Binance edge), is confirmed as the \textbf{causal hub}. The ABM's greedy optimal, ABM-guided, and RL-regulator strategies all independently select USDC as the $K=1$ intervention target.
-This cross-validation, correlational GNN ranking feeding into causal ABM intervention, is the main contribution of Section~\ref{sec:interp}. The pipeline catches the false positive that a na\"{i}ve hub-protection strategy would have missed.
+To make this paper self-contained on the refutation it feeds, we consume the exported
+ranking as input to a calibrated agent-based contagion model (companion study), which
+simulates protecting $K$ venues and measures the contagion reduction. The verdict is
+unambiguous: protecting BUSD ($K=1$) produces \emph{zero} reduction, versus $100\%$
+when USDC is protected, so \textbf{BUSD is a spurious hub} despite its high attention
+($\bar\alpha=0.412$, rank 3). USDC, the highest-outgoing-attention node, is the
+\textbf{causal hub}, independently selected as the $K=1$ target by the ABM's greedy,
+ABM-guided, and RL-regulator strategies. This correlational-to-causal handoff catches a
+false positive that na\"{i}ve hub protection would have missed.
 
 \paragraph{Graph structure and episode density}
 A structural cohesion proxy (mean pairwise Pearson correlation among node deviations) correlates $r=+0.795$ with the GAT-vs-XGBoost PR-AUC margin across the four non-degenerate folds ($p=0.205$, inconclusive at $n=4$). High-density episodes (Terra, SVB) show mean GAT margin $+0.067$ while the low-density FTX fold yields $+0.003$.
@@ -637,11 +667,11 @@ model cannot access, and it is why the edges help GAT tenfold more than GraphSAG
 (Table~\ref{tab:ablation}).
 
 \paragraph{Sample-size and statistical power}
-Three structurally independent LOCO folds (Terra, SVB/USDC, FTX) emerge from five episodes.
-This is a data constraint, not a design choice.
-The pre-registered criterion (GAT margin $\geq 0.05$ on $\geq 2/3$ quality folds) is met across all seeds on all three folds, and the four-condition ablation ($+0.100$ edge contribution, full SVB cluster) provides independent confirmation.
-The TGN-lite comparison (4/8 win rate) is reported as inconclusive rather than suppressed.
-The primary limitation is generalisability. Seven episodes from 2018--2023 cannot fully characterise future stablecoin stress distributions.
+Only three structurally independent LOCO folds (Terra, SVB/USDC, FTX) emerge from five
+episodes, a data constraint, not a design choice. The pre-registered criterion is met on
+all three folds across all seeds, and the four-condition ablation independently confirms
+the edge contribution. Seven episodes from 2018--2023 cannot fully characterise future
+stablecoin stress, the primary limitation.
 
 \paragraph{Failure modes} 61 misclassified cases span three types. (1) all 30 false positives
 concentrate on BUSD/Binance during FTX ($\hat{p}=0.95$--$0.97$, y=0), a regulatory wind-down
@@ -660,11 +690,12 @@ confirms this. Directional edges add $10\times$ more lift to GAT than to GraphSA
 the unifying rule is that attention helps when a few directed edges dominate.
 
 \subsection{Implications for Risk Management}
-
-The GAT hub ranking is operationalizable under GENIUS Act~\cite{genius2025} and MiCA~\cite{mica2023} mandates.
-At the 24-hour horizon, per-venue attention scores spike toward USDC and DAI 24--48 hours before the SVB depeg using only public price feeds.
-However, the attention score \emph{flags} candidates for monitoring. A causal model (or the companion network study) determines which warrant intervention, the top-ranked hub (BUSD) proved causally non-pivotal.
-Treat the GAT score as a triage signal, not a direct intervention target.
+The GAT hub ranking is operationalizable under GENIUS Act~\cite{genius2025} and
+MiCA~\cite{mica2023} mandates: at the 24-hour horizon, per-venue attention spikes toward
+USDC and DAI 24--48 hours before the SVB depeg using only public price feeds. But the
+score \emph{flags} candidates; a causal model determines which warrant intervention (the
+top correlational hub BUSD proved non-pivotal). Treat the GAT score as a triage signal,
+not a direct intervention target.
 
 \section{Conclusion}
 On real multi-venue data, day-scale stablecoin contagion is predictable while hour-scale onset is
