@@ -1,0 +1,24 @@
+{
+  "n_test": 1859,
+  "base_rate": 0.2932,
+  "n_positives": 545,
+  "gat_precision_at_k": {
+    "10": 0.4,
+    "25": 0.32,
+    "50": 0.32,
+    "545": 0.3284
+  },
+  "xgboost_precision_at_k": {
+    "10": 0.0,
+    "25": 0.0,
+    "50": 0.04,
+    "545": 0.1853
+  },
+  "ks": [
+    10,
+    25,
+    50,
+    545
+  ],
+  "note": "Held-out SVB cluster, 24h. precision@k = fraction of the top-k highest-scored (node,snapshot) alerts that are true contagion onsets; k=n_positives is the oracle budget."
+}
