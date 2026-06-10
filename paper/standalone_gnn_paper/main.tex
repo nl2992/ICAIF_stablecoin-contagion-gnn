@@ -30,7 +30,7 @@ networks, under a leakage-safe protocol that prevents a model from training and 
 crisis. Three findings stand out. (i)~Contagion is essentially \emph{unpredictable} at horizons of a
 few hours but becomes predictable at one day, where a \textbf{graph-attention network (GAT)} beats
 every non-graph model by $+0.18$ PR-AUC (five-seed mean). (ii)~A four-condition ablation shows
-topology and microstructure are complementary. Directed lead-lag edges add $+0.10$ PR-AUC, accruing
+topology and microstructure are complementary, with directed lead-lag edges adding $+0.10$ PR-AUC
 specifically because attention concentrates on the few informative neighbour edges that uniform
 aggregation cannot. (iii)~The model exports an interpretable per-crisis \textbf{hub ranking}, but we
 stress that this ranking is \emph{correlational}, and hand it to a causal test that overturns its
@@ -57,7 +57,7 @@ a regulatory priority~\cite{genius2025,mica2023}.
 
 The mechanism is concrete. On 10--12 March 2023, Silicon Valley Bank failed. Circle disclosed
 \$3.3B of USDC reserves were held there, and USDC fell to \$0.88. DAI, FRAX, TUSD, and USDP all
-wobbled because of shared collateral or investor panic, Figure~\ref{fig:depeg} shows the minute-level
+wobbled because of shared collateral or investor panic, and Figure~\ref{fig:depeg} shows the minute-level
 paths. Earlier episodes (Terra/UST collapse May 2022, FTX stress November 2022, BUSD wind-down
 February 2023) follow the same pattern. A triggering shock propagates through a web of shared
 exposures. This recurring structure is what makes the problem learnable, and why we assemble seven
