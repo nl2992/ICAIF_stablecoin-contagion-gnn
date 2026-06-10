@@ -22,17 +22,17 @@
 \begin{abstract}
 On 10 March 2023, the stablecoin USDC fell to \$0.88 after \$3.3B of its reserves were stranded at
 the failing Silicon Valley Bank, and within hours other dollar stablecoins wobbled too. We ask a
-concrete, operational question: when one stablecoin breaks its dollar peg, \emph{which other
+concrete, operational question. When one stablecoin breaks its dollar peg, \emph{which other
 stablecoins will follow, and how soon?} We frame this as prediction on a temporal graph of trading
 venues built from real minute-level prices across seven crisis episodes (2022--2023), and evaluate a
-full model ladder---from trivial baselines through gradient-boosted trees to graph neural
-networks---under a leakage-safe protocol that prevents a model from training and testing on the same
+full model ladder, from trivial baselines through gradient-boosted trees to graph neural
+networks, under a leakage-safe protocol that prevents a model from training and testing on the same
 crisis. Three findings stand out. (i)~Contagion is essentially \emph{unpredictable} at horizons of a
 few hours but becomes predictable at one day, where a \textbf{graph-attention network (GAT)} beats
 every non-graph model by $+0.18$ PR-AUC (five-seed mean). (ii)~A four-condition ablation shows
-topology and microstructure are complementary: directed lead-lag edges add $+0.10$ PR-AUC, accruing
+topology and microstructure are complementary. Directed lead-lag edges add $+0.10$ PR-AUC, accruing
 specifically because attention concentrates on the few informative neighbour edges that uniform
-aggregation cannot. (iii)~The model exports an interpretable per-crisis \textbf{hub ranking}---but we
+aggregation cannot. (iii)~The model exports an interpretable per-crisis \textbf{hub ranking}, but we
 stress that this ranking is \emph{correlational}, and hand it to a causal test that overturns its
 top-ranked hub. Attention weights name the dominant SVB-crisis channel
 (USDC/Binance\,$\to$\,TUSD/Binance, $1.9\times$ the average edge), and we report deployment
@@ -48,18 +48,18 @@ systemic risk, leakage-safe evaluation, decentralized finance}
 
 \subsection{Background}
 Stablecoins are cryptocurrency tokens pegged to \$1, now settling trillions of dollars annually as
-the cash leg of DeFi. \emph{Fiat-backed} coins (USDC, USDT, BUSD) hold dollar reserves;
-\emph{crypto-collateralized} coins (DAI, FRAX) are backed by baskets that frequently include other
+the cash leg of DeFi. \emph{Fiat-backed} coins (USDC, USDT, BUSD) hold dollar reserves.
+\emph{Crypto-collateralized} coins (DAI, FRAX) are backed by baskets that frequently include other
 stablecoins. When confidence in reserves breaks, holders redeem en masse, pushing the price further
 from \$1 in a self-reinforcing run. This \emph{depeg} is the crypto analogue of a bank
 run~\cite{diamond1983bank}, and the US GENIUS Act and EU MiCA both treat contagion containment as
 a regulatory priority~\cite{genius2025,mica2023}.
 
-The mechanism is concrete. On 10--12 March 2023, Silicon Valley Bank failed; Circle disclosed
+The mechanism is concrete. On 10--12 March 2023, Silicon Valley Bank failed. Circle disclosed
 \$3.3B of USDC reserves were held there, and USDC fell to \$0.88. DAI, FRAX, TUSD, and USDP all
-wobbled because of shared collateral or investor panic---Figure~\ref{fig:depeg} shows the minute-level
+wobbled because of shared collateral or investor panic, Figure~\ref{fig:depeg} shows the minute-level
 paths. Earlier episodes (Terra/UST collapse May 2022, FTX stress November 2022, BUSD wind-down
-February 2023) follow the same pattern: a triggering shock propagates through a web of shared
+February 2023) follow the same pattern. A triggering shock propagates through a web of shared
 exposures. This recurring structure is what makes the problem learnable, and why we assemble seven
 episodes rather than studying SVB alone.
 
@@ -70,7 +70,7 @@ graph}, a network whose nodes are trading venues, whose edges record which venue
 and in what order, and whose structure changes minute by minute (Figure~\ref{fig:network}). Graph
 neural networks are the natural model class for such structured, evolving data and have recently
 been applied to related on-chain prediction problems such as cross-pool bridge swaps on Uniswap
-v3~\cite{zhou2025bridge}. Our contributions are:
+v3~\cite{zhou2025bridge}. We make the following contributions.
 \begin{enumerate}
 \item A contagion predictor trained on \textbf{real}, minute-level, multi-venue data, evaluated
 under a \textbf{leakage-safe} protocol that we show is essential and that prior work often omits
@@ -111,7 +111,7 @@ forms the neighbour summary by averaging. \textbf{Graph attention networks (GAT)
 \emph{learn how much weight} $\alpha_{jk}$ to place on each neighbour via a softmax over learned
 edge scores (the exact form, with edge attributes, is Eq.~\eqref{eq:gat} in \S\ref{sec:models}).
 This learned weighting matters when some relationships carry far more information than others, as
-we will see is the case here: attention concentrates on the few strongly leading venues.
+we will see is the case here. Attention concentrates on the few strongly leading venues.
 A \emph{temporal} GNN applies this at each time step to a graph that is itself changing.
 
 \paragraph{Why a graph at all.} The alternative is to predict each venue's fate from its own
@@ -122,12 +122,12 @@ The empirical question, answered in \S\ref{sec:ablation}, is whether the cross-a
 actually carries usable signal, and our ablation is designed to measure exactly that.
 
 \paragraph{Contagion in financial networks.}
-Diamond and Dybvig~\cite{diamond1983bank} model bank runs as self-fulfilling confidence failures;
+Diamond and Dybvig~\cite{diamond1983bank} model bank runs as self-fulfilling confidence failures.
 Allen and Gale~\cite{allen2000financial}, Eisenberg and Noe~\cite{eisenberg2001systemic}, and
 Acemoglu et al.~\cite{acemoglu2015systemic} formalise how distress spreads through interbank
 exposure networks. DebtRank~\cite{battiston2012debtrank} operationalises centrality in banking
-networks; agent-based models extend the analysis to crypto~\cite{gu2024spoofability}. These works
-study contagion on \emph{known} exposure graphs; we instead learn the predictive structure from
+networks. Agent-based models extend the analysis to crypto~\cite{gu2024spoofability}. These works
+study contagion on \emph{known} exposure graphs. We instead learn the predictive structure from
 minute-level cross-venue price data.
 
 \paragraph{Graph and temporal GNNs for financial prediction.}
@@ -182,7 +182,7 @@ hard question of whether stress will \emph{newly arrive}. We use four horizons, 
 precision $P = \mathrm{TP}/(\mathrm{TP}+\mathrm{FP})$ against recall
 $R = \mathrm{TP}/(\mathrm{TP}+\mathrm{FN})$ across all score thresholds.
 Unlike ROC-AUC, PR-AUC is not inflated by the large number of true negatives that
-dominate a rare-event dataset: a classifier that flags nothing scores $0$ on PR-AUC
+dominate a rare-event dataset. A classifier that flags nothing scores $0$ on PR-AUC
 but still scores $0.5$ on ROC-AUC at a 2.6\% base rate.  PR-AUC is therefore the
 appropriate metric when the cost of missing a contagion event (false negative) is high
 and the base rate is low.
@@ -193,7 +193,7 @@ than a sharp run, and USDT-2018 has a single positive, so we treat both as low-p
 
 \begin{table}[t]
 \caption{Positive (contagion-onset) rate per episode and horizon, with episode quality flag.
-Episodes marked $\dagger$ are excluded from the stable-5 evaluation set: BUSD wind-down produced
+Episodes marked $\dagger$ are excluded from the stable-5 evaluation set. BUSD wind-down produced
 no qualifying onset (regulatory unwind, not a run) and USDT-2018 has a single positive example
 (pre-DeFi sparse market). This exclusion criterion was set before final model runs.}
 \label{tab:baserates}
@@ -275,9 +275,9 @@ near-perfect. We observed XGBoost reaching a PR-AUC of $1.0$, an obvious artifac
 than genuine generalization. We therefore group same-window episodes into \emph{clusters} and never
 split a cluster across train and test. We report two protocols. The first is a \emph{held-out SVB
 cluster}, our marquee test. The second is \emph{leave-one-cluster-out} (LOCO), in which each cluster
-takes a turn as the test set: train on all crisis clusters except one, then test on the held-out
+takes a turn as the test set. Train on all crisis clusters except one, then test on the held-out
 cluster. Because crises in 2022--2023 often co-occur (USDC/SVB and FRAX/SVB share the same
-calendar window), a naive random split would leak future-crisis information into training; LOCO
+calendar window), a naive random split would leak future-crisis information into training. LOCO
 enforces that the model has never seen the test crisis at training time. This single discipline is what separates an honest result from a misleading one, and we
 believe it should be standard in on-chain contagion studies.
 
@@ -337,12 +337,12 @@ the weights. GraphSAGE averages all neighbours equally, while GAT can concentrat
 matter. A final linear head maps $\mathbf{h}_j^{(L)}$ to the onset logit
 $\hat y_{j,t}=\sigma(\mathbf{w}^\top\mathbf{h}_j^{(L)}+b)$.
 
-\paragraph{TGN-lite: adding temporal memory.} The static GAT re-initializes node embeddings from
+\paragraph{TGN-lite. Adding temporal memory.} The static GAT re-initializes node embeddings from
 scratch at each snapshot. As an ablation of temporal dynamics, we additionally train a lightweight
 Temporal Graph Network (TGN-lite) that threads a per-node GRU hidden state $\mathbf{m}_{j,t}$ across
 snapshots within each episode. Concretely, $\mathbf{m}_{j,0}=\mathbf{0}$, and at each subsequent
 snapshot the input to the GAT stack is $[\,\mathbf{x}_{j,t}\,\|\,\mathbf{m}_{j,t-1}]$ projected to
-the hidden dimension, while the GRU cell updates:
+the hidden dimension, while the GRU cell updates.
 $\mathbf{m}_{j,t}=\mathrm{GRU}(\mathbf{h}_{j,t}^{(L)},\,\mathbf{m}_{j,t-1})$, with
 $\mathbf{h}^{(L)}$ the final GAT embedding. This tests whether the 6h rolling-edge graph already
 captures the relevant temporal dynamics or whether explicit within-episode memory adds additional
@@ -363,7 +363,7 @@ set. The non-graph models receive each node's flattened feature vector, while th
 receive the directed graph. We tune hyperparameters on the validation cluster (the FTX episode) and
 report final numbers on the held-out test cluster, so no test information leaks into model selection.
 Tree ensembles use up to 300 estimators with early stopping. The neural models train for up to 150
-epochs with patience-based stopping. We report PR-AUC and ROC-AUC; because the positive class is rare and its rate varies across
+epochs with patience-based stopping. We report PR-AUC and ROC-AUC. Because the positive class is rare and its rate varies across
 horizons, we read skill primarily from ROC-AUC and from PR-AUC lift over the base rate.
 
 \paragraph{Choosing the right yardstick.} Because depeg onset is rare, accuracy is uninformative
@@ -399,10 +399,10 @@ sensitivity to initialization in this sample size.
 
 \begin{table}[t]
 \caption{Full model ladder on the held-out SVB cluster at 24h. PR-AUC and ROC-AUC are the primary
-metrics. The base rate is $0.293$. GNN rows report 5-seed means; all others are single-seed.
+metrics. The base rate is $0.293$. GNN rows report 5-seed means. All others are single-seed.
 Only the two graph models show ROC-AUC clearly above chance.
-Raw output ECE is $0.23$--$0.26$ (poorly calibrated out-of-box); isotonic recalibration
-reduces GAT ECE to $0.006$ while preserving PR-AUC ranking---apply recalibration before operational use.}
+Raw output ECE is $0.23$--$0.26$ (poorly calibrated out-of-box). Isotonic recalibration
+reduces GAT ECE to $0.006$ while preserving PR-AUC ranking, apply recalibration before operational use.}
 \label{tab:full}
 \small
 \begin{tabular}{lrrr}
@@ -426,7 +426,7 @@ little signal (lift $+0.06$), confirming that the microstructure features are no
 strong tabular learner, XGBoost, then \emph{loses} that signal at the day horizon. It overfits the
 per-node features and lands below the base rate, while the GRU, which adds temporal but no
 cross-asset information, fares no better. The two graph models are the first to show clear ranking skill. GraphSAGE reaches the best
-ROC-AUC ($0.65$) and a 5-seed PR-AUC of $0.401$; GAT reaches the best PR-AUC lift ($+0.153$,
+ROC-AUC ($0.65$) and a 5-seed PR-AUC of $0.401$. GAT reaches the best PR-AUC lift ($+0.153$,
 5-seed mean $0.447$). The pattern is exactly what the contagion hypothesis predicts. Skill appears
 only once a model can see \emph{other} venues' stress, and is largest for the model that can weight
 the few relevant neighbours. The next two paragraphs stress-test this with a harder split and an
@@ -436,28 +436,28 @@ ablation.
 strictest test of generalization to an unseen crisis type. Table~\ref{tab:loco} reports multi-seed
 (5-seed) PR-AUC for the three non-degenerate folds (dropping BUSD, zero positives, and USDT-2018,
 single positive). GAT beats XGBoost on every fold and the mean margin is $\mathbf{+0.095}$ across
-the three folds; the pre-registered criterion is met (GAT wins by $\ge 0.05$ on 2/3 quality folds).
+the three folds. The pre-registered criterion is met (GAT wins by $\ge 0.05$ on 2/3 quality folds).
 The margin is widest on SVB ($+0.175$) and narrowest on FTX ($+0.029$), where the crisis type is
 furthest from the training distribution.
 
-\paragraph{Honest robustness check: episode selection sensitivity.}
+\paragraph{Honest robustness check. Episode selection sensitivity.}
 Table~\ref{tab:loco_stability} should be read alongside the LOCO result. Training on \emph{all 7}
-episodes, GAT's mean PR-AUC ($0.176$) beats XGBoost's ($0.131$); restricting to the \emph{5 stable,
+episodes, GAT's mean PR-AUC ($0.176$) beats XGBoost's ($0.131$). Restricting to the \emph{5 stable,
 high-quality} episodes \emph{reverses} the ranking (XGBoost $0.257$ vs GAT $0.182$), driven entirely
-by the FTX fold. The reversal is itself informative: the sparse episodes (USDT-2018, BUSD) hurt
-XGBoost---which fits each noisy episode individually---more than GAT, which propagates \emph{network
+by the FTX fold. The reversal is itself informative. The sparse episodes (USDT-2018, BUSD) hurt
+XGBoost, which fits each noisy episode individually, more than GAT, which propagates \emph{network
 structure} across episodes and so benefits even when a single episode has few positives. Removing
 them lets XGBoost fit the cleaner signal while GAT loses that cross-episode regularization. The graph
 signal thus matters most \emph{precisely when} an episode is sparse, where topology substitutes for
-label density. We report all-7 as primary (pre-registered, all episodes, GAT's design motivation);
-stable-5 is an explicit scope condition---GAT's advantage is diversity-sensitive, not
-unconditional---and the training-independent measure of the graph's contribution is the
+label density. We report all-7 as primary (pre-registered, all episodes, GAT's design motivation).
+Stable-5 is an explicit scope condition, GAT's advantage is diversity-sensitive, not
+unconditional, and the training-independent measure of the graph's contribution is the
 four-condition ablation (Section~\ref{sec:ablation}).
 
 \begin{table}[h]
 \caption{Episode-selection sensitivity. Training on all-7 episodes (primary) vs stable-5 episodes
 (robustness). When sparse/noisy episodes are included, GAT's cross-episode graph propagation is
-advantaged; removing them reverses the margin as XGBoost benefits more from the cleaner signal.
+advantaged. Removing them reverses the margin as XGBoost benefits more from the cleaner signal.
 The reversal is a scope condition, not a model failure.}
 \label{tab:loco_stability}
 \small
@@ -474,7 +474,7 @@ Stable-5 (robustness) & 0.257 & 0.182 & $-0.075$ & XGBoost gains more from clean
 
 \begin{table}[h]
 \caption{Multi-seed LOCO (5 seeds, 3 non-degenerate folds). GAT beats XGBoost on every held-out
-crisis; the pre-registered criterion (margin $\ge 0.05$ on $\ge 2$ folds) is met.}
+crisis. The pre-registered criterion (margin $\ge 0.05$ on $\ge 2$ folds) is met.}
 \label{tab:loco}
 \small
 \setlength{\tabcolsep}{5pt}
@@ -494,7 +494,7 @@ mean & 0.176 & $0.271$ & $+0.095$ \\
 \paragraph{Does temporal memory help?} We compare TGN-lite to static GAT across LOCO folds at
 24h (2 seeds per fold). TGN-lite adds a mean of $\mathbf{+0.008}$ PR-AUC, consistent on the FTX
 folds ($+0.047$ per fold, where stress propagates smoothly across hourly snapshots) but
-inconsistent elsewhere: Terra seed~0 reverses by $-0.062$, and USDT-2018 shows no benefit. The
+inconsistent elsewhere. Terra seed~0 reverses by $-0.062$, and USDT-2018 shows no benefit. The
 overall win rate is 4/8 (50\%), a coin flip at the individual-fold level. The verdict is that the
 6h rolling-edge graph already captures most temporal dynamics, and within-episode GRU memory adds
 modest signal for some crisis types but not others. We therefore use static GAT as the primary
@@ -519,9 +519,9 @@ GraphSAGE's uniform averaging dilutes it. This both justifies the graph model an
 
 A third condition reinforces this. When we keep the graph edges but zero \emph{all} node features,
 GAT collapses to PR-AUC $0.293$, indistinguishable from the base rate. Topology and microstructure
-are therefore \emph{complementary}, not substitutable: the directed lead-lag graph carries no
+are therefore \emph{complementary}, not substitutable. The directed lead-lag graph carries no
 predictive signal when the nodes are uninformative, and conversely the node features without the
-graph (GAT, no edges: $0.347$) leave most of the achievable gain on the table. Skill emerges only
+graph (GAT, no edges. $0.347$) leave most of the achievable gain on the table. Skill emerges only
 from their combination.
 
 A further test rules out feature-domain as the source of the gap.
@@ -531,31 +531,31 @@ approximation to DeFi pool data, adds only $\mathbf{+0.005}$ PR-AUC. The
 predictive advantage of GAT over XGBoost therefore originates in the directed
 lead-lag \emph{graph structure}, not in richer features.
 
-A final null isolates the \emph{topology} from merely \emph{having edges}: a sceptic
+A final null isolates the \emph{topology} from merely \emph{having edges}. A sceptic
 could argue any graph helps a message-passing model. We run a \textbf{degree-preserving
-edge-rewiring null}---permuting edge destinations so the model sees a graph of identical
+edge-rewiring null}, permuting edge destinations so the model sees a graph of identical
 density and the same edge-attribute multiset but a \emph{scrambled} lead-lag structure.
 Holding the model seed fixed, rewiring drops the held-out-SVB GAT from PR-AUC $0.331$ to
-$\mathbf{0.293\!\pm\!0.033}$ (three rewirings)---exactly the base rate---and collapses
+$\mathbf{0.293\!\pm\!0.033}$ (three rewirings), exactly the base rate, and collapses
 the FTX fold to base rate likewise, while the weak Terra fold is unaffected. The genuine
 directed lead-lag topology, not edge count, is what the GAT exploits.
 
 \begin{table}[t]
 \caption{Four-condition component ablation, held-out SVB cluster @ 24h, mean of 3 seeds. Condition 3
-(topology only, features zeroed) confirms that microstructure and graph structure are complementary:
-the edges carry no signal without informative nodes.}
+(topology only, features zeroed) confirms that microstructure and graph structure are complementary.
+The edges carry no signal without informative nodes.}
 \label{tab:ablation}
 \begin{tabular}{lrr}
 \toprule
 Condition & PR-AUC & vs.\ XGBoost \\
 \midrule
-(1) node-only (XGBoost) & 0.271 & --- \\
+(1) node-only (XGBoost) & 0.271 &, \\
 (2) GAT, node feat.\ only (no edges) & 0.347 & $+0.075$ \\
 (3) GAT, topology only (features zeroed) & 0.293 & $+0.022\;(\approx\text{base rate})$ \\
 (4) GAT, full (node feat.\ + edges) & \textbf{0.447} & $\mathbf{+0.175}$ \\
 \midrule
-\multicolumn{2}{l}{\small graph topology contribution (4)$-$(2):} & $+0.100$ \\
-\multicolumn{2}{l}{\small node feature contribution (4)$-$(3):} & $+0.153$ \\
+\multicolumn{2}{l}{\small graph topology contribution (4)$-$(2).} & $+0.100$ \\
+\multicolumn{2}{l}{\small node feature contribution (4)$-$(3).} & $+0.153$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -591,7 +591,7 @@ mean attention $\bar\alpha_{jk}$ per edge, averaged across three seeds. The top-
 average}), followed by a bidirectional USDT/Coinbase\,$\leftrightarrow$\,BUSD/Binance corridor
 (ranks 2--3). USDC/Binance appears in four of the top-ten edges, the highest outgoing attention of
 any node, confirming it as the dominant contagion \emph{source}. This named structural finding is
-precisely the kind of quotable claim a risk desk can act on: in the SVB crisis the model's
+precisely the kind of quotable claim a risk desk can act on. In the SVB crisis the model's
 predictive mass flowed through the USDC\,$\to$\,TUSD channel well before the depeg became visible.
 
 We stop at \emph{ranking}. A natural temptation is to read the top hub as ``the venue
@@ -602,15 +602,15 @@ merely correlational ranking, is a distinct question that requires an intervenab
 
 \paragraph{Cross-validating hub rankings with a causal ABM.}
 To answer this question, we consume the exported attention ranking as the input to a calibrated agent-based contagion model (companion paper).
-The ABM allows us to simulate targeted interventions---which venue to backstop at a budget of $K$ protected nodes---and measure the resulting contagion reduction.
-The finding is unambiguous: \textbf{BUSD is a spurious hub.}
+The ABM allows us to simulate targeted interventions, which venue to backstop at a budget of $K$ protected nodes, and measure the resulting contagion reduction.
+The finding is unambiguous. \textbf{BUSD is a spurious hub.}
 Although BUSD/Binance receives mean attention $\bar\alpha=0.412$ (rank 3 among all edges, $1.5\times$ the network average), protecting BUSD alone ($K=1$) produces \emph{zero} contagion reduction in the ABM, versus $100\%$ contagion reduction when USDC is protected.
-USDC, which receives the highest outgoing attention of any single node ($\bar\alpha=0.511$ for the USDC/Binance\,$\to$\,TUSD/Binance edge), is confirmed as the \textbf{causal hub}: the ABM's greedy optimal, ABM-guided, and RL-regulator strategies all independently select USDC as the $K=1$ intervention target.
-This cross-validation---correlational GNN ranking feeding into causal ABM intervention---is the main contribution of Section~\ref{sec:interp}: the pipeline catches the false positive that a na\"{i}ve hub-protection strategy would have missed.
+USDC, which receives the highest outgoing attention of any single node ($\bar\alpha=0.511$ for the USDC/Binance\,$\to$\,TUSD/Binance edge), is confirmed as the \textbf{causal hub}. The ABM's greedy optimal, ABM-guided, and RL-regulator strategies all independently select USDC as the $K=1$ intervention target.
+This cross-validation, correlational GNN ranking feeding into causal ABM intervention, is the main contribution of Section~\ref{sec:interp}. The pipeline catches the false positive that a na\"{i}ve hub-protection strategy would have missed.
 
 \paragraph{Graph structure and episode density.}
-A structural cohesion proxy (mean pairwise Pearson correlation among node deviations) correlates $r=+0.795$ with the GAT-vs-XGBoost PR-AUC margin across the four non-degenerate folds ($p=0.205$, inconclusive at $n=4$); high-density episodes (Terra, SVB) show mean GAT margin $+0.067$ while the low-density FTX fold yields $+0.003$.
-A fifth FRAX\_SVB fold (co-located with USDC\_SVB) reverses to $-0.424$ because XGBoost's tabular features transfer perfectly ($0.850$) when both events share the same underlying shock; GAT's topology, trained on USDC\_SVB's node set, does not generalise to FRAX\_SVB's different composition---illustrating the density proxy's limit when event co-location breaks fold independence.
+A structural cohesion proxy (mean pairwise Pearson correlation among node deviations) correlates $r=+0.795$ with the GAT-vs-XGBoost PR-AUC margin across the four non-degenerate folds ($p=0.205$, inconclusive at $n=4$). High-density episodes (Terra, SVB) show mean GAT margin $+0.067$ while the low-density FTX fold yields $+0.003$.
+A fifth FRAX\_SVB fold (co-located with USDC\_SVB) reverses to $-0.424$ because XGBoost's tabular features transfer perfectly ($0.850$) when both events share the same underlying shock. GAT's topology, trained on USDC\_SVB's node set, does not generalise to FRAX\_SVB's different composition, illustrating the density proxy's limit when event co-location breaks fold independence.
 
 
 
@@ -624,10 +624,10 @@ it gain an edge. The lead-time curve in Figure~\ref{fig:leadtime} reflects the e
 reserve run, not an artefact of the metric.
 
 \paragraph{Why the rolling 6h graph suffices for temporal dynamics.} The
-6h rolling lead-lag graph already encodes recent dynamics implicitly---its edges shift every
+6h rolling lead-lag graph already encodes recent dynamics implicitly, its edges shift every
 snapshot to reflect which venue currently leads whom. Explicit GRU memory is a correction that
-helps when stress propagates smoothly (FTX: $+0.047$) but hurts when episode dynamics are
-heterogeneous (Terra seed~0: $-0.062$); the net effect is only $+0.008$ mean PR-AUC.
+helps when stress propagates smoothly (FTX. $+0.047$) but hurts when episode dynamics are
+heterogeneous (Terra seed~0. $-0.062$). The net effect is only $+0.008$ mean PR-AUC.
 
 \paragraph{Why attention and not averaging.} Contagion is \emph{sparse and directional}. In any crisis
 only a few edges matter (for instance USDC\,$\to$\,DAI, the edge from a stressed leader to a coin that
@@ -637,48 +637,48 @@ model cannot access, and it is why the edges help GAT tenfold more than GraphSAG
 (Table~\ref{tab:ablation}).
 
 \paragraph{Sample-size and statistical power.}
-Three structurally independent LOCO folds (Terra, SVB/USDC, FTX) emerge from five episodes;
-this is a data constraint, not a design choice.
+Three structurally independent LOCO folds (Terra, SVB/USDC, FTX) emerge from five episodes.
+This is a data constraint, not a design choice.
 The pre-registered criterion (GAT margin $\geq 0.05$ on $\geq 2/3$ quality folds) is met across all seeds on all three folds, and the four-condition ablation ($+0.100$ edge contribution, full SVB cluster) provides independent confirmation.
 The TGN-lite comparison (4/8 win rate) is reported as inconclusive rather than suppressed.
-The primary limitation is generalisability: seven episodes from 2018--2023 cannot fully characterise future stablecoin stress distributions.
+The primary limitation is generalisability. Seven episodes from 2018--2023 cannot fully characterise future stablecoin stress distributions.
 
-\paragraph{Failure modes.} 61 misclassified cases span three types: (1) all 30 false positives
+\paragraph{Failure modes.} 61 misclassified cases span three types. (1) all 30 false positives
 concentrate on BUSD/Binance during FTX ($\hat{p}=0.95$--$0.97$, y=0), a regulatory wind-down
-whose elevated log-volume pattern-matches pre-contagion stress; (2) gradual-onset USDT contagion
-is under-classified ($\hat{p}=0.23$) due to insufficient cross-venue lead-lag signal at 6h;
-(3) thin 2018-era pre-DeFi episodes lack message-passing coverage. Future work: regulatory-event
+whose elevated log-volume pattern-matches pre-contagion stress. (2) gradual-onset USDT contagion
+is under-classified ($\hat{p}=0.23$) due to insufficient cross-venue lead-lag signal at 6h.
+(3) thin 2018-era pre-DeFi episodes lack message-passing coverage. Future work. Regulatory-event
 filters and finer snapshot granularity.
 
 \paragraph{Reconciling with prior on-chain GNNs.} Prior work on six-hour bridge-swap
 link prediction~\cite{zhou2025bridge} finds GraphSAGE beats GAT on a dense ten-node pool graph
-where node features dominate. The apparent contradiction is resolved by edge semantics:
-in that dense-link setting, uniform averaging is efficient and attention adds variance; in our
+where node features dominate. The apparent contradiction is resolved by edge semantics.
+In that dense-link setting, uniform averaging is efficient and attention adds variance. In our
 sparse, directional contagion graph, a handful of edges carry nearly all the signal and
-the rest are co-movement noise---exactly the regime where attention pays. Our edge ablation
-confirms this: directional edges add $10\times$ more lift to GAT than to GraphSAGE, and
+the rest are co-movement noise, exactly the regime where attention pays. Our edge ablation
+confirms this. Directional edges add $10\times$ more lift to GAT than to GraphSAGE, and
 the unifying rule is that attention helps when a few directed edges dominate.
 
 \subsection{Implications for Risk Management}
 
 The GAT hub ranking is operationalizable under GENIUS Act~\cite{genius2025} and MiCA~\cite{mica2023} mandates.
 At the 24-hour horizon, per-venue attention scores spike toward USDC and DAI 24--48 hours before the SVB depeg using only public price feeds.
-However, the attention score \emph{flags} candidates for monitoring; a causal model (or the companion network study) determines which warrant intervention---the top-ranked hub (BUSD) proved causally non-pivotal.
+However, the attention score \emph{flags} candidates for monitoring. A causal model (or the companion network study) determines which warrant intervention, the top-ranked hub (BUSD) proved causally non-pivotal.
 Treat the GAT score as a triage signal, not a direct intervention target.
 
 \section{Conclusion}
 On real multi-venue data, day-scale stablecoin contagion is predictable while hour-scale onset is
-not, and graph attention adds real, \emph{edge-borne} signal: across five seeds on the held-out SVB
+not, and graph attention adds real, \emph{edge-borne} signal. Across five seeds on the held-out SVB
 cluster GAT reaches PR-AUC $0.447\pm0.016$, beating XGBoost by $+0.175$ on every seed, and a
 four-condition ablation pins $+0.10$ of that margin to the directed lead-lag \emph{edges} rather than
 the neural architecture or feature domain (on-chain proxy features add only $+0.005$ to XGBoost).
-Attention names the mechanism---the USDC\,$\to$\,TUSD channel carries $1.9\times$ average attention
-during the SVB crisis---and explicit temporal memory adds little ($+0.008$), consistent with the 6h
-rolling graph already encoding the dynamics. Three caveats bound the claim: seven episodes on two
-exchanges (two too sparse); lead-lag edges can over-credit a thinly traded coin that only
-\emph{appears} to lead; and raw outputs need isotonic recalibration before use (ECE
+Attention names the mechanism, the USDC\,$\to$\,TUSD channel carries $1.9\times$ average attention
+during the SVB crisis, and explicit temporal memory adds little ($+0.008$), consistent with the 6h
+rolling graph already encoding the dynamics. Three caveats bound the claim. Seven episodes on two
+exchanges (two too sparse). Lead-lag edges can over-credit a thinly traded coin that only
+\emph{appears} to lead. And raw outputs need isotonic recalibration before use (ECE
 $0.23$--$0.26\to0.006$--$0.061$, PR-AUC preserved). Most importantly, the ranking is
-\emph{correlational}: a venue can top it while being irrelevant to containment, which is why handing
+\emph{correlational}. A venue can top it while being irrelevant to containment, which is why handing
 it to an explicit causal test is the responsible deployment and motivates the companion study. All
 results regenerate from a single committed script.
 
