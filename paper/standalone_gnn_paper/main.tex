@@ -358,7 +358,7 @@ are trained with a class-weighted cross-entropy (positives are rare) and early s
 validation cluster. Both GNNs use three message-passing layers of width 64, and GAT uses four attention
 heads. We use Adam (learning rate $10^{-3}$), dropout $0.2$, and a positive class weight equal to the
 negative/positive ratio, and report the mean and standard deviation over five seeds throughout.
-Crucially, every model in the ladder is evaluated on \emph{exactly the same} (snapshot, node)
+Every model in the ladder is evaluated on \emph{exactly the same} (snapshot, node)
 samples, so differences reflect the model, not the data slice.
 
 \begin{table}[t]
@@ -604,7 +604,7 @@ of those passing through $j$. A node with high $b_j$ sits on many routes through
 third is a \emph{propagator label} computed directly from raw prices, so that it is not circular
 with the model. For the USDC/SVB crisis the exported hub score ranks \textbf{BUSD} first.
 
-Crucially, the correlational measures do not even agree with \emph{each other}
+The correlational measures do not even agree with \emph{each other}
 (Table~\ref{tab:hubreconcile}): undirected betweenness crowns the co-mover BUSD,
 occlusion already pulls toward USDC, and the directed attention weights (next
 paragraph) name USDC outright. The exported score, dominated by betweenness, inherits
