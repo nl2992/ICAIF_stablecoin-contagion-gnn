@@ -1,5 +1,10 @@
 # TODO — stablecoin-contagion-gnn
-# Reviewer Score: 5.8 / 10 — Borderline Reject → Target: 7.5 / Accept
+
+> **STATUS (2026-06-11): SUBMISSION-READY.** All referee items below are addressed; canonical paper is `paper/standalone_gnn_paper/` (the old joint draft under `paper/latex/` has been removed) and compiles at 8pp (ICAIF '26, ACM sigconf). Headline contributions: GAT precision@10 = 0.40 (2.7× base rate), the 4-condition node/edge ablation, the hub-ranking reconciliation, and the causal handoff to the companion ABM paper. Planning notes below are a historical record of the review-defense pass.
+
+---
+
+# Reviewer Score: 5.8 / 10 — Borderline Reject → Target: 7.5 / Accept *(historical, pre-revision)*
 
 ---
 
