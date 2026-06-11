@@ -654,7 +654,11 @@ false positive that na\"{i}ve hub protection would have missed.
 \paragraph{Operating points} A risk desk consumes a ranked alert list, not an AUC. On the
 held-out SVB cluster the GAT's top-10 alerts are $40\%$ precise versus $0\%$ for XGBoost, and at
 the oracle budget GAT holds $33\%$ (above the $29\%$ base rate) while XGBoost falls to $19\%$, so
-the graph model is the only one yielding an actionable list.
+the graph model is the only one yielding an actionable list. In plain terms: four of every ten
+venues the GAT flags first are genuine contagion onsets, whereas the gradient-boosted ranker
+surfaces none in its first ten---the difference between a usable watchlist and noise. This is
+where the graph structure earns its keep: a venue's risk is read partly from \emph{which of its
+neighbours are already stressed}, information a per-venue tabular model cannot see.
 
 \paragraph{Sample-size and statistical power}
 Only three structurally independent LOCO folds emerge from five episodes, a data constraint.
