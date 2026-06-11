@@ -573,13 +573,12 @@ The edges carry no signal without informative nodes.}
 \toprule
 Condition & PR-AUC & vs.\ XGBoost \\
 \midrule
-(1) node-only (XGBoost) & 0.271 &, \\
+(1) node-only (XGBoost) & 0.271 & --- \\
 (2) GAT, node feat.\ only (no edges) & 0.347 & $+0.075$ \\
-(3) GAT, topology only (features zeroed) & 0.293 & $+0.022\;(\approx\text{base rate})$ \\
+(3) GAT, topology only (features zeroed) & 0.293 & $+0.022$ \\
 (4) GAT, full (node feat.\ + edges) & \textbf{0.447} & $\mathbf{+0.175}$ \\
 \midrule
-\multicolumn{2}{l}{\small graph topology contribution (4)$-$(2).} & $+0.100$ \\
-\multicolumn{2}{l}{\small node feature contribution (4)$-$(3).} & $+0.153$ \\
+\multicolumn{3}{@{}p{0.95\columnwidth}@{}}{\footnotesize Graph-topology contribution (4)$-$(2) $=+0.100$; node-feature contribution (4)$-$(3) $=+0.153$. Condition (3) sits at $\approx$the base rate: edges carry no signal without informative nodes.}\\
 \bottomrule
 \end{tabular}
 \end{table}
