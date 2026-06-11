@@ -28,7 +28,7 @@ On 10 March 2023, the stablecoin USDC fell to \$0.88 after \$3.3B of its reserve
 the failing Silicon Valley Bank, and within hours other dollar stablecoins wobbled too. We ask a
 concrete, operational question. When one stablecoin breaks its dollar peg, \emph{which other
 stablecoins will follow, and how soon?} We frame this as prediction on a temporal graph of trading
-venues built from real minute-level prices across seven crisis episodes (2022--2023), and evaluate a
+venues built from real minute-level prices across seven crisis episodes (2018--2023), and evaluate a
 full model ladder, from trivial baselines through gradient-boosted trees to graph neural
 networks, under a leakage-safe protocol that prevents a model from training and testing on the same
 crisis. Three findings stand out. (i)~Contagion is essentially \emph{unpredictable} at horizons of a
@@ -366,7 +366,7 @@ samples, so differences reflect the model, not the data slice.
 \caption{Experimental configuration.}
 \label{tab:config}
 \small
-\begin{tabular}{ll}
+\begin{tabular}{@{}l p{0.68\columnwidth}@{}}
 \toprule
 Setting & Value \\
 \midrule
@@ -485,13 +485,13 @@ label density.  Across the 4 structurally independent LOCO folds, mean pairwise 
 \caption{Episode-selection sensitivity (all-7 vs stable-5). Removing sparse episodes reverses the margin: GAT benefits from diversity, XGBoost from cleaner signal. A scope condition, not a failure.}
 \label{tab:loco_stability}
 \small
-\setlength{\tabcolsep}{5pt}
-\begin{tabular}{lccrr}
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{lccr}
 \toprule
-Training set & XGBoost & GAT & Margin (GAT$-$XGB) & Interpretation \\
+Training set & XGBoost & GAT & Margin (GAT$-$XGB) \\
 \midrule
-All-7 (primary) & 0.131 & 0.176 & $+0.046$ & GAT benefits from sparse episodes\\
-Stable-5 (robustness) & 0.257 & 0.182 & $-0.075$ & XGBoost gains more from cleaner signal\\
+All-7 (primary) & 0.131 & 0.176 & $+0.046$\\
+Stable-5 (robustness) & 0.257 & 0.182 & $-0.075$\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -557,7 +557,7 @@ lead-lag \emph{graph structure}, not in richer features.
 
 A final null isolates the \emph{topology} from merely \emph{having edges}. A sceptic
 could argue any graph helps a message-passing model. We run a \textbf{degree-preserving
-edge-rewiring null}, permuting edge destinations so the model sees a graph of identical
+edge-rewiring null}, permuting edge destinations so the model receives a graph of identical
 density and the same edge-attribute multiset but a \emph{scrambled} lead-lag structure.
 Holding the model seed fixed, rewiring drops the held-out-SVB GAT from PR-AUC $0.331$ to
 $\mathbf{0.293\!\pm\!0.033}$ (three rewirings), exactly the base rate, and collapses
@@ -569,7 +569,8 @@ directed lead-lag topology, not edge count, is what the GAT exploits.
 (topology only, features zeroed) confirms that microstructure and graph structure are complementary.
 The edges carry no signal without informative nodes.}
 \label{tab:ablation}
-\begin{tabular}{lrr}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lrr@{}}
 \toprule
 Condition & PR-AUC & vs.\ XGBoost \\
 \midrule
@@ -641,7 +642,7 @@ merely correlational ranking, is a distinct question that requires an intervenab
 
 \paragraph{Cross-validating hub rankings with a causal ABM}
 To make this paper self-contained on the refutation it feeds, we consume the exported
-ranking as input to a calibrated agent-based contagion model (companion study), which
+ranking as input to a calibrated agent-based contagion model (companion study, anonymized), which
 simulates protecting $K$ venues and measures the contagion reduction. The verdict is
 unambiguous: protecting BUSD ($K=1$) produces \emph{zero} reduction, versus $100\%$
 when USDC is protected, so \textbf{BUSD is a spurious hub} despite its high attention
@@ -701,9 +702,9 @@ during the SVB crisis, and explicit temporal memory adds little ($+0.008$), cons
 rolling graph already encoding the dynamics. Three caveats bound the claim. Seven episodes on two
 exchanges (two too sparse). Lead-lag edges can over-credit a thinly traded coin that only
 \emph{appears} to lead. And raw outputs need isotonic recalibration before use (ECE
-$0.23$--$0.26\to0.006$--$0.061$, PR-AUC preserved). Most importantly, the ranking is
-\emph{correlational}. A venue can top it while being irrelevant to containment, which is why handing
-it to an explicit causal test is the responsible deployment and motivates the companion study. All
+$0.23$--$0.26\to0.006$--$0.061$, PR-AUC preserved). The most consequential caveat is that the ranking is
+\emph{correlational}: a venue can top it while being irrelevant to containment, which is why handing
+it to an explicit causal test is the responsible deployment and motivates the companion study (anonymized). All
 results regenerate from a single committed script.
 
 \begin{acks}
