@@ -1,4 +1,4 @@
-"""
+r"""
 Leave-One-Episode-Out (LOEO) cross-validation.
 
 With only 7 real episodes, LOEO is the ONLY honest generalization claim.
