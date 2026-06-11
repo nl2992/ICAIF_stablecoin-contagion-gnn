@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this software or its results, please cite the accompanying paper."
+title: "Predicting Cross-Asset Stablecoin Contagion with Graph Attention Networks"
+authors:
+  - family-names: Li
+    given-names: Nigel
+date-released: 2026-06-11
+version: "1.0.0"
+license: MIT
+repository-code: "https://github.com/nl2992/ICAIF_stablecoin-contagion-gnn"
+keywords:
+  - reproducible-research
+  - quantitative-finance
+  - ICAIF
