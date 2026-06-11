@@ -478,10 +478,7 @@ XGBoost, which fits each noisy episode individually, more than GAT, which propag
 structure} across episodes and so benefits even when a single episode has few positives. Removing
 them lets XGBoost fit the cleaner signal while GAT loses that cross-episode regularization. The graph
 signal thus matters most \emph{precisely when} an episode is sparse, where topology substitutes for
-label density. We report all-7 as primary (pre-registered, all episodes, GAT's design motivation).
-Stable-5 is an explicit scope condition, GAT's advantage is diversity-sensitive, not
-unconditional, and the training-independent measure of the graph's contribution is the
-four-condition ablation (Section~\ref{sec:ablation}).
+label density.  Across the 4 structurally independent LOCO folds, mean pairwise cross-node correlation (graph density) covaries positively with GAT margin ($r{=}{+}0.80$, $p{=}0.21$, $n{=}4$, underpowered but directionally consistent).  We report all-7 as primary (pre-registered, all episodes, GAT's design motivation); stable-5 is a scope condition, GAT's advantage diversity-sensitive, not unconditional.
 
 \begin{table}[h]
 \caption{Episode-selection sensitivity (all-7 vs stable-5). Removing sparse episodes reverses the margin: GAT benefits from diversity, XGBoost from cleaner signal. A scope condition, not a failure.}
