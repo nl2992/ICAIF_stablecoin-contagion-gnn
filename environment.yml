@@ -1,0 +1,14 @@
+# Reproducible environment for stablecoin-contagion-gnn.
+#   conda env create -f environment.yml && conda activate scgnn
+# (mirrors the CI install; Python 3.11 is the tested version)
+name: scgnn
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - --extra-index-url https://download.pytorch.org/whl/cpu
+      - torch
+      - torch-geometric
+      - -e .[dev]

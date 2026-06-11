@@ -1,5 +1,7 @@
 # Stablecoin Contagion GNN
 
+[![CI](https://github.com/nl2992/ICAIF_stablecoin-contagion-gnn/actions/workflows/ci.yml/badge.svg)](https://github.com/nl2992/ICAIF_stablecoin-contagion-gnn/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](environment.yml)
+
 <p align="center">
   <img src="paper/standalone_gnn_paper/figures/01_depeg_paths.png" width="760" alt="Real 1-minute prices during the USDC/SVB crisis: the *spread* of the drop across"/>
 </p>
@@ -139,7 +141,7 @@ pytest tests/
 
 ## Reproduce (data → analysis → paper)
 
-**Prerequisites.** Python 3.11+, then:
+**Prerequisites.** Python 3.11. For the exact pinned environment use conda — `conda env create -f environment.yml && conda activate scgnn` — or with pip:
 ```bash
 pip install -e .
 ```
