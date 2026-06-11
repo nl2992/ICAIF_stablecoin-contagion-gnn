@@ -457,8 +457,9 @@ the few relevant neighbours. The next two paragraphs stress-test this with a har
 ablation.
 
 \paragraph{Operational precision under an alert budget}
-Under a fixed alert budget, GAT precision@10 $= 0.40$ ($2.7\times$ the base rate of $0.293$)
-while XGBoost precision@10 $= 0.00$. At $k{=}25$, GAT retains $0.32$ lift, XGBoost remains $0.00$.
+Under a fixed alert budget, GAT precision@10 $= 0.40$ ($1.4\times$ the base rate of $0.293$)
+while XGBoost precision@10 $= 0.00$. At $k{=}25$, GAT precision is $0.32$, XGBoost remains $0.00$.
+The contrast at the very top of the ranking is the operative point: GAT places genuine positives in its first ten alerts where the gradient-boosted ranker places none.
 A risk desk with a tight alert budget gains real operating lift from GAT. XGBoost provides no triage signal.
 
 \paragraph{The harder test. Leave-one-cluster-out} In LOCO, each cluster is held out in turn, the
