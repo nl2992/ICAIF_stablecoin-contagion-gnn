@@ -197,9 +197,11 @@ than a sharp run, and USDT-2018 has a single positive, so we treat both as low-p
 
 \begin{table}[t]
 \caption{Positive (contagion-onset) rate per episode and horizon, with episode quality flag.
+Rates are fractions of hourly (snapshot, node) samples whose onset occurs within the horizon.
 Episodes marked $\dagger$ are excluded from the stable-5 evaluation set. BUSD wind-down produced
 no qualifying onset (regulatory unwind, not a run) and USDT-2018 has a single positive example
-(pre-DeFi sparse market). This exclusion criterion was set before final model runs.}
+(pre-DeFi sparse market). This exclusion criterion was set before final model runs
+(pre-registration document committed in the anonymized repository).}
 \label{tab:baserates}
 \small
 \begin{tabular}{lrrrrl}
@@ -222,12 +224,12 @@ quantity a trading desk would recognise. They are the price deviation from \$1, 
 over 1 and 24 hours, trading volume, \emph{Amihud illiquidity}~\cite{amihud2002illiquidity},
 \emph{Kyle's $\lambda$}~\cite{kyle1985continuous}, and the \emph{Ornstein-Uhlenbeck half-life}. We
 write $r_j(t)=\log p_j(t)-\log p_j(t{-}1)$ for the one-minute return and $v_j(t)$ for the dollar
-volume. Each feature has a short definition and a plain meaning. Realized volatility over a window of
+volume. Realized volatility over a window of
 $n$ minutes is
 \begin{equation}
 \sigma_j=\sqrt{\textstyle\sum_{\tau=t-n+1}^{t} r_j(\tau)^2},
 \end{equation}
-and a high value simply means the price has been moving a lot lately. Amihud illiquidity is the
+and a high value means the price has moved sharply over the recent window. Amihud illiquidity is the
 average size of a price move per dollar traded,
 \begin{equation}
 \mathrm{Amihud}_j=\frac{1}{n}\sum_{\tau=t-n+1}^{t}\frac{|r_j(\tau)|}{v_j(\tau)},
@@ -246,12 +248,6 @@ h_j=\frac{\ln 2}{-\ln(1-\theta_j)},
 and a long half-life means the peg recovers slowly, which is the dangerous case. Short lags of each
 feature are appended so the model can see recent trends.
 
-\paragraph{Edges} For each snapshot we build a 6-hour rolling \emph{directed lead-lag} graph. Two
-venues are connected if their returns are correlated, and the edge is oriented from the
-\emph{leader} (the venue that moves first) to the \emph{follower}. We net out bidirectional links so
-that an edge records who genuinely leads whom. Each edge carries its correlation and lead-lag as
-attributes. This is the structure drawn in Figure~\ref{fig:network}.
-
 \paragraph{Formal task definition} Let $p_j(t)$ be the price of node $j$ at minute $t$ and
 $\delta_j(t)=|p_j(t)-1|$ its deviation from the dollar peg in basis points. Node $j$ is
 \emph{stressed} at $t$ if $\delta_j(t)>\tau_{c(j)}$ for at least $m=10$ consecutive minutes, where
@@ -264,13 +260,15 @@ with the origin node excluded ($y_{o,t}^{\Delta}\equiv 0$). The ``calm at $t$'' 
 the task non-trivial. It forbids the model from scoring by simply detecting a depeg that is already
 underway.
 
-\paragraph{Graph construction} For each hourly snapshot we connect nodes $i$ and $j$ whose 6-hour
-rolling return correlation exceeds a threshold, orienting the edge by the sign of their estimated
-lead-lag $\ell_{ij}$ (positive means $i$ leads $j$). We net out the dominant direction,
+\paragraph{Graph construction} For each hourly snapshot we build a 6-hour rolling \emph{directed
+lead-lag} graph: nodes $i$ and $j$ are connected if their return correlation over a trailing window
+ending at the snapshot exceeds a threshold (no forward data enters an edge), and the edge is
+oriented by the sign of their estimated lead-lag $\ell_{ij}$ (positive means $i$ leads $j$). We net
+out the dominant direction,
 $W_{ij}\leftarrow\max(0,\,\rho_{ij}^{\text{lead}}-\rho_{ji}^{\text{lead}})$, so that an edge records
 who \emph{genuinely} leads whom rather than mere co-movement, an important distinction, since during
-a market-wide panic everything correlates. The result is the directed graph of
-Figure~\ref{fig:network}.
+a market-wide panic everything correlates. Each edge carries its correlation and lead-lag as
+attributes. The result is the directed graph of Figure~\ref{fig:network}.
 
 \paragraph{Why leakage control is the crux} The FRAX/SVB and USDC/SVB episodes occupy the
 \emph{same} calendar window of March 2023. If one is placed in the training set and the other in the
@@ -279,10 +277,8 @@ near-perfect. We observed XGBoost reaching a PR-AUC of $1.0$, an obvious artifac
 than genuine generalization. We therefore group same-window episodes into \emph{clusters} and never
 split a cluster across train and test. We report two protocols. The first is a \emph{held-out SVB
 cluster}, our marquee test. The second is \emph{leave-one-cluster-out} (LOCO), in which each cluster
-takes a turn as the test set. Train on all crisis clusters except one, then test on the held-out
-cluster. Because crises in 2022--2023 often co-occur (USDC/SVB and FRAX/SVB share the same
-calendar window), a naive random split would leak future-crisis information into training. LOCO
-enforces that the model has never seen the test crisis at training time. This single discipline is what separates an honest result from a misleading one, and we
+takes a turn as the test set, so the model has never seen the test crisis at training time. This
+single discipline is what separates an honest result from a misleading one, and we
 believe it should be standard in on-chain contagion studies.
 
 Table~\ref{tab:leakage} makes the hazard concrete. With the overlapping FRAX/SVB episode in the
@@ -388,7 +384,11 @@ receive the directed graph. We tune hyperparameters on the validation cluster (t
 report final numbers on the held-out test cluster, so no test information leaks into model selection.
 Tree ensembles use up to 300 estimators with early stopping. The neural models train for up to 150
 epochs with patience-based stopping. We report PR-AUC and ROC-AUC. Because the positive class is rare and its rate varies across
-horizons, we read skill primarily from ROC-AUC and from PR-AUC lift over the base rate.
+horizons, we read \emph{cross-horizon} skill from ROC-AUC (base-rate-free) and
+\emph{within-horizon} ranking skill from PR-AUC and its lift over the base rate. The two can
+order models differently (GraphSAGE leads on ROC-AUC, GAT on PR-AUC in Table~\ref{tab:full});
+for an alert-budget use case the precision-oriented metric is the operative one, which is why
+GAT is our primary model.
 
 \paragraph{Choosing the right yardstick} Because depeg onset is rare, accuracy is uninformative
 (a model that always predicts ``calm'' scores well). We use precision-recall AUC (PR-AUC), which
@@ -415,8 +415,9 @@ Per-node tabular models stay near zero skill at every horizon.}
 
 \paragraph{Headline (averaged over five seeds)} On the held-out SVB cluster at 24 hours, GAT
 attains PR-AUC $0.447 \pm 0.016$, a margin of $\mathbf{+0.175 \pm 0.016}$ over XGBoost, which falls
-\emph{below} the base rate at $0.271$ (Table~\ref{tab:full}). The multi-seed reporting matters here. A single unlucky random seed gives GAT only $0.29$, so reporting one run would have
-\emph{understated} the effect. The tight error bars show the advantage is stable, not a lucky draw.
+\emph{below} the base rate at $0.271$ (Table~\ref{tab:full}). The multi-seed reporting matters here. Our initial single-seed run put GAT at only
+$0.29$, below the five-seed range, so seed noise can materially understate (or overstate) any
+single run; we therefore treat only the multi-seed mean as citable.
 All five seeds independently beat XGBoost (sign-test $p=0.031$). GraphSAGE also beats the base
 rate across all five seeds (5-seed mean $0.401 \pm 0.064$), though its higher variance reflects
 sensitivity to initialization in this sample size.
@@ -425,8 +426,8 @@ sensitivity to initialization in this sample size.
 \caption{Full model ladder on the held-out SVB cluster at 24h. PR-AUC and ROC-AUC are the primary
 metrics. The base rate is $0.293$. GNN rows report 5-seed means. All others are single-seed.
 Only the two graph models show ROC-AUC clearly above chance.
-Raw-output expected calibration error (ECE) is $0.23$--$0.26$ (poorly calibrated out-of-box). Isotonic recalibration
-reduces GAT ECE to $0.006$ while preserving PR-AUC ranking, apply recalibration before operational use.}
+Raw outputs are poorly calibrated (ECE $0.23$--$0.26$); isotonic recalibration reduces GAT ECE
+to $0.006$ without changing the PR-AUC ranking, so recalibrate before operational use.}
 \label{tab:full}
 \small
 \begin{tabular}{lrrr}
@@ -448,8 +449,9 @@ GAT (5-seed mean) & \textbf{0.447} & 0.585 & $+0.153$ \\
 persistence baselines sit at or below chance, as they must. Logistic regression already extracts a
 little signal (lift $+0.06$), confirming that the microstructure features are not pure noise. The
 strong tabular learner, XGBoost, then \emph{loses} that signal at the day horizon. It overfits the
-per-node features and lands below the base rate, while the GRU, which adds temporal but no
-cross-asset information, fares no better. The two graph models are the first to show clear ranking skill. GraphSAGE reaches the best
+per-node features and lands below the base rate (the linear model keeps its small edge precisely
+because it lacks the capacity to memorise episode idiosyncrasies), while the GRU, which adds
+temporal but no cross-asset information, fares no better. The two graph models are the first to show clear ranking skill. GraphSAGE reaches the best
 ROC-AUC ($0.65$) and a 5-seed PR-AUC of $0.401$. GAT reaches the best PR-AUC lift ($+0.153$,
 5-seed mean $0.447$). The pattern is exactly what the contagion hypothesis predicts. Skill appears
 only once a model can see \emph{other} venues' stress, and is largest for the model that can weight
@@ -460,7 +462,8 @@ ablation.
 Under a fixed alert budget (Table~\ref{tab:preck}), GAT places genuine positives in its first
 ten alerts where the gradient-boosted ranker places none: GAT precision@10 $=0.40$
 ($1.4\times$ the $0.293$ base rate) versus XGBoost $0.00$, and at $k{=}25$ GAT holds $0.32$
-while XGBoost remains $0.00$. The contrast at the very top of the ranking is the operative
+while XGBoost remains $0.00$. At the \emph{oracle budget} ($k$ equal to the 545 true onsets in
+the test window) GAT holds $0.33$ versus XGBoost's $0.19$. The contrast at the very top of the ranking is the operative
 point: a risk desk with a tight alert budget gains real operating lift from GAT, while
 XGBoost provides no triage signal.
 
@@ -476,6 +479,7 @@ $k$ & GAT prec@$k$ & XGBoost prec@$k$ & base rate \\
 \midrule
 10 & \textbf{0.40} & 0.00 & 0.293 \\
 25 & \textbf{0.32} & 0.00 & 0.293 \\
+545 (oracle) & \textbf{0.33} & 0.19 & 0.293 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -498,8 +502,8 @@ structure} across episodes and so benefits even when a single episode has few po
 them lets XGBoost fit the cleaner signal while GAT loses that cross-episode regularization. The graph
 signal thus matters most \emph{precisely when} an episode is sparse, where topology substitutes for
 label density.  A possible (but unproven) reading is that graph density covaries positively with GAT margin
-across the 4 structurally independent LOCO folds ($r{=}{+}0.80$, $p{=}0.21$, $n{=}4$); with
-$n{=}4$ this is underpowered and we do not rest any claim on it. We report all-7 as primary
+across the four LOCO folds with a defined GAT margin ($r{=}{+}0.80$, $p{=}0.21$, $n{=}4$); this
+is underpowered and we do not rest any claim on it. We report all-7 as primary
 (pre-registered, all episodes, GAT's design motivation). We state the boundary plainly:
 \textbf{GAT's advantage does not hold on the stable-5 subset}; the margin is positive only
 when the sparse episodes are included, which we report honestly as a scope boundary rather
@@ -524,7 +528,7 @@ mean (3 independent) & 0.176 & $0.271$ & $+0.095$ \\
 \midrule
 FRAX/SVB$^\dagger$ & 0.850 & 0.426 & $-0.424$ \\
 \bottomrule
-\multicolumn{4}{p{0.92\columnwidth}}{\footnotesize $^\dagger$Co-located with USDC/SVB (same March-2023 shock). XGBoost's tabular features transfer perfectly while GAT's USDC-trained topology does not match FRAX's node composition, so co-location, not model quality, drives the reversal.}
+\multicolumn{4}{p{0.92\columnwidth}}{\footnotesize $^\dagger$Co-located with USDC/SVB (same March-2023 shock). XGBoost's tabular features transfer perfectly while GAT's USDC-trained topology does not match FRAX's node composition, consistent with co-location, not model quality, driving the reversal.}
 \end{tabular}
 \end{table}
 
@@ -581,16 +585,19 @@ A final null isolates the \emph{topology} from merely \emph{having edges}. A sce
 could argue any graph helps a message-passing model. We run a \textbf{degree-preserving
 edge-rewiring null}, permuting edge destinations so the model receives a graph of identical
 density and the same edge-attribute multiset but a \emph{scrambled} lead-lag structure.
-Holding the model seed fixed, rewiring drops the held-out-SVB GAT from PR-AUC $0.331$ to
+Under the all-7 LOCO protocol with the model seed held fixed (a paired design, which is why its
+baseline differs from the five-seed headline), rewiring drops the SVB fold from PR-AUC $0.331$ to
 $\mathbf{0.295\!\pm\!0.035}$ (five rewirings), essentially the base rate ($0.293$), and
 collapses the FTX fold to base rate likewise ($0.166$ vs base $0.163$), while the weak
 Terra fold is unaffected. The genuine
 directed lead-lag topology, not edge count, is what the GAT exploits.
 
 \begin{table}[t]
-\caption{Four-condition component ablation, held-out SVB cluster @ 24h, mean of 3 seeds. Condition 3
-(topology only, features zeroed) confirms that microstructure and graph structure are complementary.
-The edges carry no signal without informative nodes.}
+\caption{Four-condition component ablation, held-out SVB cluster @ 24h. Conditions (2) and (4)
+are five-seed means (condition (4) is the headline run); condition (3) is a three-seed mean;
+XGBoost is deterministic. Condition 3 (topology only, features zeroed) confirms that
+microstructure and graph structure are complementary: the edges carry no signal without
+informative nodes.}
 \label{tab:ablation}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}lrr@{}}
@@ -640,7 +647,8 @@ its error, which is exactly the disagreement only the causal knockout can settle
 \emph{with each other} (USDC/SVB crisis). Undirected betweenness crowns the co-mover
 BUSD; occlusion also ranks BUSD first ($1.00$) with USDC close behind ($0.85$); only
 directed attention names the true source USDC, and only the causal knockout is
-decisive. Each column normalised to its maximum.}
+decisive. Each column normalised to its maximum. Causal $\Delta$ is the contagion reduction
+from a full backstop, computed by the companion causal model (final paragraph of this section).}
 \label{tab:hubreconcile}
 \small
 \setlength{\tabcolsep}{3.5pt}
@@ -653,11 +661,11 @@ USDC & 0.00 & 0.85 & \textbf{0.51} & \textbf{100\%} \\
 TUSD & 0.00 & 0.53 & --- & --- \\
 DAI  & 0.00 & 0.00 & --- & 98\% \\
 \bottomrule
-\multicolumn{5}{l}{\footnotesize $^\dagger$Top outgoing-edge mean attention $\bar\alpha$ (network avg.\ ${\approx}0.27$).}
+\multicolumn{5}{@{}p{0.97\columnwidth}@{}}{\footnotesize $^\dagger$Top outgoing-edge mean attention $\bar\alpha$, 48-snapshot pre-peak window (network avg.\ ${\approx}0.27$).}
 \end{tabular}
 \end{table}
 
-Examining raw attention weights over the 48-snapshot window before the SVB peak: the top-attended edge is \textbf{USDC$\,\to\,$TUSD} ($\bar\alpha=0.51$, $1.9\times$ the network average). USDC/Binance appears in four of the top-ten edges, the highest outgoing attention of any node, confirming it as the dominant contagion \emph{source} before the depeg was visible.
+Examining raw attention weights over the 48-snapshot window before the SVB peak: the top-attended edge is \textbf{USDC$\,\to\,$TUSD} ($\bar\alpha=0.51$, $1.9\times$ the network average). USDC/Binance appears in four of the top-ten edges, the highest outgoing attention of any node, marking it---in the model's learned representation---as the leading candidate contagion \emph{source} before the depeg was visible. The top-attended edge is a predictive lead-lag channel, not necessarily a documented collateral link, one more reason to treat attention as correlational evidence.
 
 We stop at \emph{ranking}. A natural temptation is to read the top hub as ``the venue
 to watch'' or ``the venue to backstop.'' But centrality and attention are \emph{correlational}. They
@@ -671,20 +679,22 @@ ranking as input to a calibrated agent-based contagion model (companion study, a
 simulates protecting $K$ venues and measures the contagion reduction. The verdict is
 unambiguous: protecting BUSD ($K=1$) produces \emph{zero} reduction, versus $100\%$
 when USDC is protected, so \textbf{BUSD is a spurious hub} despite its high attention
-($\bar\alpha=0.412$, rank 3). USDC, the highest-outgoing-attention node, is the
+($\bar\alpha=0.412$, rank 3). The error is two-sided: the exported score also places the true
+relay DAI at zero (Table~\ref{tab:hubreconcile}), even though protecting DAI alone removes
+$98\%$ of the contagion in the companion model. USDC, the highest-outgoing-attention node, is the
 \textbf{causal hub}, independently selected as the $K=1$ target by the ABM's greedy,
 ABM-guided, and RL-regulator strategies. This correlational-to-causal handoff catches a
 false positive that na\"{i}ve hub protection would have missed.
 
 \section{Discussion}
 \paragraph{Operating points} A risk desk consumes a ranked alert list, not an AUC. On the
-held-out SVB cluster the GAT's top-10 alerts are $40\%$ precise versus $0\%$ for XGBoost, and at
-the oracle budget GAT holds $33\%$ (above the $29\%$ base rate) while XGBoost falls to $19\%$, so
-the graph model is the only one yielding an actionable list. In plain terms: four of every ten
-venues the GAT flags first are genuine contagion onsets, whereas the gradient-boosted ranker
-surfaces none in its first ten---the difference between a usable watchlist and noise. This is
-where the graph structure earns its keep: a venue's risk is read partly from \emph{which of its
-neighbours are already stressed}, information a per-venue tabular model cannot see.
+held-out SVB cluster the GAT's top-10 alerts are $40\%$ precise versus $0\%$ for XGBoost, and it
+keeps that edge at the oracle budget (Table~\ref{tab:preck}), so the graph model is the only one
+yielding an actionable list: four of every ten venues the GAT flags first are genuine contagion
+onsets, whereas the gradient-boosted ranker surfaces none in its first ten---the difference
+between a usable watchlist and noise. The graph structure is what buys this: a venue's risk is
+read partly from \emph{which of its neighbours are already stressed}, information a per-venue
+tabular model cannot see.
 
 \paragraph{Sample-size and statistical power}
 Only three structurally independent LOCO folds emerge from five episodes, a data constraint.
@@ -696,8 +706,8 @@ fully characterise future stablecoin stress, the primary limitation.
 concentrate on BUSD/Binance during FTX ($\hat{p}=0.95$--$0.97$, y=0), a regulatory wind-down
 whose elevated log-volume pattern-matches pre-contagion stress. (2) gradual-onset USDT contagion
 is under-classified ($\hat{p}=0.23$) due to insufficient cross-venue lead-lag signal at 6h.
-(3) thin 2018-era pre-DeFi episodes lack message-passing coverage. Future work. Regulatory-event
-filters and finer snapshot granularity.
+(3) thin 2018-era pre-DeFi episodes lack message-passing coverage. Future work includes
+regulatory-event filters and finer snapshot granularity.
 
 \paragraph{Reconciling with prior on-chain GNNs} Prior work on six-hour bridge-swap
 link prediction~\cite{zhou2025bridge} finds GraphSAGE beats GAT on a dense ten-node pool graph
@@ -730,7 +740,7 @@ exchanges (two too sparse). Lead-lag edges can over-credit a thinly traded coin 
 $0.23$--$0.26\to0.006$--$0.061$, PR-AUC preserved). The most consequential caveat is that the ranking is
 \emph{correlational}: a venue can top it while being irrelevant to containment, which is why handing
 it to an explicit causal test is the responsible deployment and motivates the companion study (anonymized). All
-results regenerate from a single committed script.
+results reproduce from a single committed script.
 
 \begin{acks}
 All GNN training code, data-processing pipelines, ablation scripts, and committed
