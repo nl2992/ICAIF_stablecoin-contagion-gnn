@@ -457,10 +457,28 @@ the few relevant neighbours. The next two paragraphs stress-test this with a har
 ablation.
 
 \paragraph{Operational precision under an alert budget}
-Under a fixed alert budget, GAT precision@10 $= 0.40$ ($1.4\times$ the base rate of $0.293$)
-while XGBoost precision@10 $= 0.00$. At $k{=}25$, GAT precision is $0.32$, XGBoost remains $0.00$.
-The contrast at the very top of the ranking is the operative point: GAT places genuine positives in its first ten alerts where the gradient-boosted ranker places none.
-A risk desk with a tight alert budget gains real operating lift from GAT. XGBoost provides no triage signal.
+Under a fixed alert budget (Table~\ref{tab:preck}), GAT places genuine positives in its first
+ten alerts where the gradient-boosted ranker places none: GAT precision@10 $=0.40$
+($1.4\times$ the $0.293$ base rate) versus XGBoost $0.00$, and at $k{=}25$ GAT holds $0.32$
+while XGBoost remains $0.00$. The contrast at the very top of the ranking is the operative
+point: a risk desk with a tight alert budget gains real operating lift from GAT, while
+XGBoost provides no triage signal.
+
+\begin{table}[t]
+\caption{Operational precision@$k$ on the held-out SVB cluster at 24h (base rate $0.293$).
+GAT surfaces genuine onsets at the top of the ranking; XGBoost surfaces none.}
+\label{tab:preck}
+\small
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{lrrr}
+\toprule
+$k$ & GAT prec@$k$ & XGBoost prec@$k$ & base rate \\
+\midrule
+10 & \textbf{0.40} & 0.00 & 0.293 \\
+25 & \textbf{0.32} & 0.00 & 0.293 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \paragraph{The harder test. Leave-one-cluster-out} In LOCO, each cluster is held out in turn, the
 strictest test of generalization to an unseen crisis type. Table~\ref{tab:loco} reports multi-seed
@@ -479,22 +497,13 @@ XGBoost, which fits each noisy episode individually, more than GAT, which propag
 structure} across episodes and so benefits even when a single episode has few positives. Removing
 them lets XGBoost fit the cleaner signal while GAT loses that cross-episode regularization. The graph
 signal thus matters most \emph{precisely when} an episode is sparse, where topology substitutes for
-label density.  Across the 4 structurally independent LOCO folds, mean pairwise cross-node correlation (graph density) covaries positively with GAT margin ($r{=}{+}0.80$, $p{=}0.21$, $n{=}4$, underpowered but directionally consistent).  We report all-7 as primary (pre-registered, all episodes, GAT's design motivation); stable-5 is a scope condition, GAT's advantage diversity-sensitive, not unconditional.
-
-\begin{table}[h]
-\caption{Episode-selection sensitivity (all-7 vs stable-5). Removing sparse episodes reverses the margin: GAT benefits from diversity, XGBoost from cleaner signal. A scope condition, not a failure.}
-\label{tab:loco_stability}
-\small
-\setlength{\tabcolsep}{6pt}
-\begin{tabular}{lccr}
-\toprule
-Training set & XGBoost & GAT & Margin (GAT$-$XGB) \\
-\midrule
-All-7 (primary) & 0.131 & 0.176 & $+0.046$\\
-Stable-5 (robustness) & 0.257 & 0.182 & $-0.075$\\
-\bottomrule
-\end{tabular}
-\end{table}
+label density.  A possible (but unproven) reading is that graph density covaries positively with GAT margin
+across the 4 structurally independent LOCO folds ($r{=}{+}0.80$, $p{=}0.21$, $n{=}4$); with
+$n{=}4$ this is underpowered and we do not rest any claim on it. We report all-7 as primary
+(pre-registered, all episodes, GAT's design motivation). We state the boundary plainly:
+\textbf{GAT's advantage does not hold on the stable-5 subset}; the margin is positive only
+when the sparse episodes are included, which we report honestly as a scope boundary rather
+than an unconditional win.
 
 \begin{table}[h]
 \caption{Multi-seed LOCO (5 seeds). GAT beats XGBoost on every \emph{independent} held-out
@@ -519,11 +528,24 @@ FRAX/SVB$^\dagger$ & 0.850 & 0.426 & $-0.424$ \\
 \end{tabular}
 \end{table}
 
-\paragraph{Does temporal memory help?} Adding an explicit per-node GRU memory (TGN-lite) to the
-static GAT changes LOCO PR-AUC by only $\mathbf{+0.008}$ on average (4/8 fold win rate, a coin
-flip), helping where stress propagates smoothly (FTX $+0.047$) but not elsewhere. The 6h
-rolling-edge graph already encodes most temporal dynamics, so we keep static GAT as the primary
-model and treat TGN-lite as an exploratory ablation.
+\begin{table}[h]
+\caption{Episode-selection sensitivity (all-7 vs stable-5). Removing the sparse episodes reverses the margin: GAT's advantage holds only when they are included. We report this as a scope boundary, not an unconditional win.}
+\label{tab:loco_stability}
+\small
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{lccr}
+\toprule
+Training set & XGBoost & GAT & Margin (GAT$-$XGB) \\
+\midrule
+All-7 (primary) & 0.131 & 0.176 & $+0.046$\\
+Stable-5 (robustness) & 0.257 & 0.182 & $-0.075$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Does temporal memory help?} Adding explicit per-node GRU memory (TGN-lite) gains
+only $\mathbf{+0.008}$ PR-AUC on average with a coin-flip (4/8) win rate, suggesting the 6h
+rolling-edge graph already captures the temporal dynamics; we keep static GAT as the primary model.
 
 \section{Is it the graph, or just a bigger model?}\label{sec:ablation}
 A skeptic will reasonably ask whether the GNN wins simply because it is a more flexible neural
@@ -607,15 +629,17 @@ with the model. For the USDC/SVB crisis the exported hub score ranks \textbf{BUS
 
 The correlational measures do not even agree with \emph{each other}
 (Table~\ref{tab:hubreconcile}): undirected betweenness crowns the co-mover BUSD,
-occlusion already pulls toward USDC, and the directed attention weights (next
-paragraph) name USDC outright. The exported score, dominated by betweenness, inherits
+occlusion \emph{also} ranks BUSD first ($1.00$) but places USDC close behind
+($0.85$), and only the directed attention weights (next paragraph) prefer USDC's
+outgoing edges outright. The exported score, dominated by betweenness, inherits
 its error, which is exactly the disagreement only the causal knockout can settle.
 
 \begin{table}[t]
 \caption{The hub ranking is correlational, and the correlational measures disagree
 \emph{with each other} (USDC/SVB crisis). Undirected betweenness crowns the co-mover
-BUSD, occlusion partly recovers USDC, directed attention names the true source USDC,
-only the causal knockout is decisive. Each column normalised to its maximum.}
+BUSD; occlusion also ranks BUSD first ($1.00$) with USDC close behind ($0.85$); only
+directed attention names the true source USDC, and only the causal knockout is
+decisive. Each column normalised to its maximum.}
 \label{tab:hubreconcile}
 \small
 \setlength{\tabcolsep}{3.5pt}
@@ -709,7 +733,7 @@ results regenerate from a single committed script.
 
 \begin{acks}
 All GNN training code, data-processing pipelines, ablation scripts, and committed
-result artefacts are available at [anonymized repository; link provided at camera-ready].
+result artefacts are available at an anonymized repository (link provided at camera-ready).
 \end{acks}
 
 {\footnotesize\setlength{\bibsep}{0pt plus 0.1ex}
