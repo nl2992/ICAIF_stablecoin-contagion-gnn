@@ -114,8 +114,8 @@ its local neighbourhood, and a final layer maps it to a prediction. \textbf{Grap
 forms the neighbour summary by averaging. \textbf{Graph attention networks (GAT)}~\cite{velickovic2018gat} instead
 \emph{learn how much weight} $\alpha_{jk}$ to place on each neighbour via a softmax over learned
 edge scores (the exact form, with edge attributes, is Eq.~\eqref{eq:gat} in \S\ref{sec:models}).
-This learned weighting matters when some relationships carry far more information than others, as
-we will see is the case here. Attention concentrates on the few strongly leading venues.
+This learned weighting matters when some relationships carry far more information than
+others---here, as we will see, the few strongly leading venues.
 A \emph{temporal} GNN applies this at each time step to a graph that is itself changing.
 
 \paragraph{Why a graph at all} The alternative is to predict each venue's fate from its own
@@ -273,8 +273,7 @@ attributes. The result is the directed graph of Figure~\ref{fig:network}.
 \paragraph{Why leakage control is the crux} The FRAX/SVB and USDC/SVB episodes occupy the
 \emph{same} calendar window of March 2023. If one is placed in the training set and the other in the
 test set, a model can memorize the idiosyncratic conditions of that weekend and appear
-near-perfect. We observed XGBoost reaching a PR-AUC of $1.0$, an obvious artifact of overlap rather
-than genuine generalization. We therefore group same-window episodes into \emph{clusters} and never
+near-perfect (Table~\ref{tab:leakage}). We therefore group same-window episodes into \emph{clusters} and never
 split a cluster across train and test. We report two protocols. The first is a \emph{held-out SVB
 cluster}, our marquee test. The second is \emph{leave-one-cluster-out} (LOCO), in which each cluster
 takes a turn as the test set, so the model has never seen the test crisis at training time. This
@@ -387,8 +386,8 @@ epochs with patience-based stopping. We report PR-AUC and ROC-AUC. Because the p
 horizons, we read \emph{cross-horizon} skill from ROC-AUC (base-rate-free) and
 \emph{within-horizon} ranking skill from PR-AUC and its lift over the base rate. The two can
 order models differently (GraphSAGE leads on ROC-AUC, GAT on PR-AUC in Table~\ref{tab:full});
-for an alert-budget use case the precision-oriented metric is the operative one, which is why
-GAT is our primary model.
+for an alert-budget use case the precision-oriented metric is operative, hence GAT as the
+primary model.
 
 \paragraph{Choosing the right yardstick} Because depeg onset is rare, accuracy is uninformative
 (a model that always predicts ``calm'' scores well). We use precision-recall AUC (PR-AUC), which
@@ -588,9 +587,9 @@ edge-rewiring null}, permuting edge destinations so the model receives a graph o
 density and the same edge-attribute multiset but a \emph{scrambled} lead-lag structure.
 Under the all-7 LOCO protocol with the model seed held fixed (a paired design, which is why its
 baseline differs from the five-seed headline), rewiring drops the SVB fold from PR-AUC $0.331$ to
-$\mathbf{0.295\!\pm\!0.035}$ (five rewirings), essentially the base rate ($0.293$), and
-collapses the FTX fold to base rate likewise ($0.166$ vs base $0.163$), while the weak
-Terra fold is unaffected. The genuine
+$\mathbf{0.294\!\pm\!0.024}$ (twenty rewirings), essentially the base rate ($0.293$), and
+collapses the FTX fold to base rate likewise ($0.164$ vs base $0.163$), while the weak
+Terra fold shows no dependence on the genuine topology ($0.210\pm0.036$ vs real $0.185$). The genuine
 directed lead-lag topology, not edge count, is what the GAT exploits.
 
 \begin{table}[t]

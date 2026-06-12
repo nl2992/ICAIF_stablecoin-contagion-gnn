@@ -11,7 +11,7 @@ rate, the genuine topology is what the GAT exploits.
 Writes results/eval/edge_rewiring_null.json. Deterministic.
 
 Usage:
-    python eval/run_edge_rewiring_null.py                # rewire seeds 1..5
+    python eval/run_edge_rewiring_null.py                # rewire seeds 1..20
     python eval/run_edge_rewiring_null.py --seeds 1 2 3   # reproduce the 3-seed result
 """
 from __future__ import annotations
@@ -49,8 +49,8 @@ def _gat_pr(train, test, feat, yte) -> float:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--seeds", type=int, nargs="+", default=[1, 2, 3, 4, 5],
-                    help="Rewire seeds (env SCGNN_REWIRE_SEED). Default 1..5.")
+    ap.add_argument("--seeds", type=int, nargs="+", default=list(range(1, 21)),
+                    help="Rewire seeds (env SCGNN_REWIRE_SEED). Default 1..20.")
     args = ap.parse_args()
 
     feat = load_feature_names()

@@ -171,7 +171,7 @@ is seeded (5-seed LOCO; the edge-rewiring null via `SCGNN_REWIRE_SEED`).
 | Build the real dataset (Binance + Coinbase 1-min, peg-adjusted, leakage-safe) | `python scripts/build_real_dataset.py` | `data/processed/dataset_manifest.json` |
 | GAT beats best non-graph by **+0.175** PR-AUC at 24 h (5-seed) — abstract, Tab. `loco_stability` | `python eval/run_benchmark.py --horizon 1440` then `python eval/robustness_multiseed.py` | `results/eval/loco_stability_comparison_h1440.csv`, `loco_all_7_h1440.csv` |
 | Four-condition ablation: directed lead-lag **edges add +0.10** PR-AUC — Tab. `ablation` | `python eval/ablation_graph.py` | `results/eval/ablation_4condition.csv` |
-| Edge-rewiring null (topology, not edge count, drives the gain; 5 rewirings) | `python eval/run_edge_rewiring_null.py` | `results/eval/edge_rewiring_null.json` |
+| Edge-rewiring null (topology, not edge count, drives the gain; 20 rewirings) | `python eval/run_edge_rewiring_null.py` | `results/eval/edge_rewiring_null.json` |
 | Exported per-crisis hub ranking + ABM calibration target | `python interpret/run_interpret.py --episode USDC_SVB --horizon 1440 --kind gat` then `python scripts/export_calibration.py` | `exports/schema_v1.json`, `exports/calibration_v1.csv` |
 | All paper figures | `python scripts/generate_figures.py` | `paper/standalone_gnn_paper/figures/*.png` |
 
