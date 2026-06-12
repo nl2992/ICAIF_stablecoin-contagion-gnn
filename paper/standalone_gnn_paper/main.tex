@@ -582,8 +582,9 @@ could argue any graph helps a message-passing model. We run a \textbf{degree-pre
 edge-rewiring null}, permuting edge destinations so the model receives a graph of identical
 density and the same edge-attribute multiset but a \emph{scrambled} lead-lag structure.
 Holding the model seed fixed, rewiring drops the held-out-SVB GAT from PR-AUC $0.331$ to
-$\mathbf{0.293\!\pm\!0.033}$ (three rewirings), exactly the base rate, and collapses
-the FTX fold to base rate likewise, while the weak Terra fold is unaffected. The genuine
+$\mathbf{0.295\!\pm\!0.035}$ (five rewirings), essentially the base rate ($0.293$), and
+collapses the FTX fold to base rate likewise ($0.166$ vs base $0.163$), while the weak
+Terra fold is unaffected. The genuine
 directed lead-lag topology, not edge count, is what the GAT exploits.
 
 \begin{table}[t]
