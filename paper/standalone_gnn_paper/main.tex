@@ -426,7 +426,8 @@ sensitivity to initialization in this sample size.
 \caption{Full model ladder on the held-out SVB cluster at 24h. PR-AUC and ROC-AUC are the primary
 metrics. The base rate is $0.293$. GNN rows report 5-seed means. All others are single-seed.
 Only the two graph models show ROC-AUC clearly above chance.
-Raw outputs are poorly calibrated (ECE $0.23$--$0.26$); isotonic recalibration reduces GAT ECE
+Raw outputs are poorly calibrated (ECE $0.23$--$0.26$); isotonic recalibration (fit on the
+validation cluster, applied to the held-out test set) reduces GAT ECE
 to $0.006$ without changing the PR-AUC ranking, so recalibrate before operational use.}
 \label{tab:full}
 \small
