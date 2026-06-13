@@ -425,9 +425,10 @@ sensitivity to initialization in this sample size.
 \caption{Full model ladder on the held-out SVB cluster at 24h. PR-AUC and ROC-AUC are the primary
 metrics. The base rate is $0.293$. GNN rows report 5-seed means. All others are single-seed.
 Only the two graph models show ROC-AUC clearly above chance.
-Raw outputs are poorly calibrated (ECE $0.23$--$0.26$); isotonic recalibration (fit on the
-validation cluster, applied to the held-out test set) reduces GAT ECE
-to $0.006$ without changing the PR-AUC ranking, so recalibrate before operational use.}
+Raw outputs are poorly calibrated (ECE $0.23$--$0.26$); a monotonic isotonic recalibration reduces
+GAT ECE to ${\approx}0.02$ (out-of-sample; committed artifact
+\texttt{calibration\_recalibrated\_h1440.csv}) and, being order-preserving, leaves the PR-AUC
+ranking unchanged, so recalibrate before operational use.}
 \label{tab:full}
 \small
 \begin{tabular}{lrrr}
@@ -548,8 +549,9 @@ Stable-5 (robustness) & 0.257 & 0.182 & $-0.075$\\
 \end{table}
 
 \paragraph{Does temporal memory help?} Adding explicit per-node GRU memory (TGN-lite) gains
-only $\mathbf{+0.008}$ PR-AUC on average with a coin-flip (4/8) win rate, suggesting the 6h
-rolling-edge graph already captures the temporal dynamics; we keep static GAT as the primary model.
+only $\mathbf{+0.008}$ PR-AUC averaged over four LOCO folds (two seeds each), winning just 4 of 8
+fold-seed comparisons (a coin flip), so the 6h rolling-edge graph already captures the temporal
+dynamics; we keep static GAT as the primary model.
 
 \section{Is it the graph, or just a bigger model?}\label{sec:ablation}
 A skeptic will reasonably ask whether the GNN wins simply because it is a more flexible neural
@@ -625,8 +627,8 @@ predictions change when a node is removed from the graph,
 \end{equation}
 a perturbation-based and software-version-robust alternative to GNNExplainer-style
 masks~\cite{ying2019gnnexplainer}. A large $\mathrm{Occ}_j$ just means the model relies heavily on
-node $j$. The second is graph \emph{betweenness centrality}, the share of shortest paths that pass
-through $j$,
+node $j$. The second is graph \emph{betweenness centrality} (undirected, the standard
+network-centrality benchmark), the share of shortest paths that pass through $j$,
 \begin{equation}
 b_j=\sum_{s\neq j\neq u}\frac{\sigma_{su}(j)}{\sigma_{su}},
 \end{equation}
@@ -667,11 +669,10 @@ DAI  & 0.00 & 0.00 & --- & 98\% \\
 
 Examining raw attention weights over the 48-snapshot window before the SVB peak: the top-attended edge is \textbf{USDC$\,\to\,$TUSD} ($\bar\alpha=0.51$, $1.9\times$ the network average). USDC/Binance appears in four of the top-ten edges, the highest outgoing attention of any node, marking it---in the model's learned representation---as the leading candidate contagion \emph{source} before the depeg was visible. The top-attended edge is a predictive lead-lag channel, not necessarily a documented collateral link, one more reason to treat attention as correlational evidence.
 
-We stop at \emph{ranking}. A natural temptation is to read the top hub as ``the venue
-to watch'' or ``the venue to backstop.'' But centrality and attention are \emph{correlational}. They
-reward a venue for moving with the crisis, which is not the same as causing it to spread. Whether
-the top hub is actually \emph{causally} responsible, and what happens to a regulator who acts on a
-merely correlational ranking, is a distinct question that requires an intervenable model.
+We stop at \emph{ranking}. Centrality and attention are \emph{correlational}: they reward a venue for
+moving with the crisis, not for causing the spread. Whether the top hub is actually \emph{causally}
+responsible---and what happens to a regulator who acts on a merely correlational ranking---requires
+an intervenable model.
 
 \paragraph{Cross-validating hub rankings with a causal ABM}
 To make this paper self-contained on the refutation it feeds, we consume the exported
@@ -687,14 +688,11 @@ ABM-guided, and RL-regulator strategies. This correlational-to-causal handoff ca
 false positive that na\"{i}ve hub protection would have missed.
 
 \section{Discussion}
-\paragraph{Operating points} A risk desk consumes a ranked alert list, not an AUC. On the
-held-out SVB cluster the GAT's top-10 alerts are $40\%$ precise versus $0\%$ for XGBoost, and it
-keeps that edge at the oracle budget (Table~\ref{tab:preck}), so the graph model is the only one
-yielding an actionable list: four of every ten venues the GAT flags first are genuine contagion
-onsets, whereas the gradient-boosted ranker surfaces none in its first ten---the difference
-between a usable watchlist and noise. The graph structure is what buys this: a venue's risk is
-read partly from \emph{which of its neighbours are already stressed}, information a per-venue
-tabular model cannot see.
+\paragraph{Operating points} A risk desk consumes a ranked alert list, not an AUC. On the held-out
+SVB cluster the GAT's top-10 alerts are $40\%$ precise versus $0\%$ for XGBoost and hold that edge at
+the oracle budget (Table~\ref{tab:preck})---the difference between a usable watchlist and noise---
+because a venue's risk is read partly from \emph{which of its neighbours are already stressed}, which
+a per-venue tabular model cannot see.
 
 \paragraph{Sample-size and statistical power}
 Only three structurally independent LOCO folds emerge from five episodes, a data constraint.
@@ -715,16 +713,15 @@ where node features dominate. The apparent contradiction is resolved by edge sem
 In that dense-link setting, uniform averaging is efficient and attention adds variance. In our
 sparse, directional contagion graph, a handful of edges carry nearly all the signal and
 the rest are co-movement noise, exactly the regime where attention pays. Our edge ablation
-confirms this. Directional edges add $10\times$ more lift to GAT than to GraphSAGE, and
-the unifying rule is that attention helps when a few directed edges dominate.
+confirms this. Directional edges add $10\times$ more lift to GAT than to GraphSAGE; a tentative
+reading consistent with both settings is that attention helps when a few directed edges dominate.
 
 \subsection{Implications for Risk Management}
 The GAT hub ranking is operationalizable under GENIUS Act~\cite{genius2025} and
-MiCA~\cite{mica2023} requirements. At the 24-hour horizon, per-venue attention spikes toward
-USDC and DAI 24--48 hours before the SVB depeg using only public price feeds. But the
-score \emph{flags} candidates. A causal model determines which warrant intervention (the
-top correlational hub BUSD proved non-pivotal). Treat the GAT score as a triage signal,
-not a direct intervention target.
+MiCA~\cite{mica2023} requirements: per-venue attention spikes toward USDC and DAI 24--48 hours
+before the SVB depeg using only public price feeds. But the score \emph{flags} candidates; a causal
+model determines which warrant intervention (the top correlational hub BUSD proved non-pivotal), so
+treat the GAT score as a triage signal, not a direct intervention target.
 
 \section{Conclusion}
 On real multi-venue data, day-scale stablecoin contagion is predictable while hour-scale onset is
@@ -734,10 +731,13 @@ four-condition ablation pins $+0.10$ of that margin to the directed lead-lag \em
 the neural architecture or feature domain (on-chain proxy features add only $+0.005$ to XGBoost).
 Attention names the mechanism, the USDC\,$\to$\,TUSD channel carries $1.9\times$ average attention
 during the SVB crisis, and explicit temporal memory adds little ($+0.008$), consistent with the 6h
-rolling graph already encoding the dynamics. Three caveats bound the claim. Seven episodes on two
-exchanges (two too sparse). Lead-lag edges can over-credit a thinly traded coin that only
-\emph{appears} to lead. And raw outputs need isotonic recalibration before use (ECE
-$0.23$--$0.26\to0.006$--$0.061$, PR-AUC preserved). The most consequential caveat is that the ranking is
+rolling graph already encoding the dynamics. Four caveats bound the claim. The most important is that
+the cross-crisis advantage is \emph{conditional}: GAT's mean leave-one-cluster-out margin is positive
+on all seven episodes but reverses on the stable-five subset (\S\ref{sec:results}); we report this
+boundary rather than an unconditional win (the held-out SVB margin of $+0.175$ stays robust across
+seeds). The other three are data and deployment limits: seven episodes on two exchanges (two too
+sparse); lead-lag edges can over-credit a thinly traded coin that only \emph{appears} to lead; and
+raw outputs need isotonic recalibration (GAT ECE $0.26\to0.02$, PR-AUC preserved by monotonicity). The most consequential caveat is that the ranking is
 \emph{correlational}: a venue can top it while being irrelevant to containment, which is why handing
 it to an explicit causal test is the responsible deployment and motivates the companion study (anonymized). All
 results reproduce from a single committed script.
