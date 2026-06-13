@@ -32,8 +32,8 @@ venues built from real minute-level prices across seven crisis episodes (2018--2
 full model ladder, from trivial baselines through gradient-boosted trees to graph neural
 networks, under a leakage-safe protocol that prevents a model from training and testing on the same
 crisis. Three findings stand out. (i)~Contagion is essentially \emph{unpredictable} at horizons of a
-few hours but becomes predictable at one day, where a \textbf{graph-attention network (GAT)} beats
-every non-graph model by $+0.175$ PR-AUC (five-seed mean). (ii)~A four-condition ablation shows
+few hours but becomes predictable at one day, where a \textbf{graph-attention network (GAT)} attains
+the highest PR-AUC, beating the gradient-boosted baseline by $+0.175$ (five-seed mean). (ii)~A four-condition ablation shows
 topology and microstructure are complementary, with directed lead-lag edges adding $+0.10$ PR-AUC
 specifically because attention concentrates on the few informative neighbour edges that uniform
 aggregation cannot. (iii)~The model exports an interpretable per-crisis \textbf{hub ranking}, but we
@@ -396,19 +396,23 @@ grows fivefold from the 30-minute to the 24-hour horizon, so comparing raw PR-AU
 horizons is misleading. We therefore also report ROC-AUC, which is invariant to the base rate, and
 PR-AUC \emph{lift} (PR-AUC minus base rate). A skill-less model scores ROC-AUC $0.5$ and lift $0$.
 
-\paragraph{Lead-time. Contagion is a day-scale phenomenon} Figure~\ref{fig:leadtime} and the
-ROC-AUC values in Table~\ref{tab:full} tell the central story. At horizons of four hours or less,
-\emph{no} model exceeds chance. Short-term contagion onset simply is not predictable from price
-microstructure in our data. At 24 hours, only the graph models clear ROC-AUC $0.5$, with GraphSAGE
-reaching $0.65$. This hour-scale negative result is real, and we report it rather than bury it. It
-honestly scopes the positive claim to the day horizon.
+\paragraph{Lead-time. Contagion is a day-scale phenomenon} Figure~\ref{fig:leadtime} tells the
+central story. Below the one-day horizon, no model achieves a meaningful precision lift over the base
+rate, and the graph models in particular show essentially \emph{no} lift; short-horizon contagion
+onset is not predictable from price microstructure in our data. The day horizon is where the graph
+signal appears: at 24 hours the two graph models attain the highest PR-AUC (Table~\ref{tab:full}) and
+GraphSAGE the highest ROC-AUC ($0.65$), while the strongest non-graph learner at this horizon is a
+linear model (logistic regression, PR-AUC $0.357$), not the gradient-boosted trees. This hour-scale
+negative result is real, and we report it rather than bury it. It honestly scopes the positive claim
+to the day horizon.
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.86\textwidth]{figures/02_leadtime.png}
-\caption{Lead-time. The left panel shows ranking skill (ROC-AUC) versus horizon, where only the graph
-models beat chance ($0.5$, dashed) at 24h. The right panel shows precision lift over the base rate.
-Per-node tabular models stay near zero skill at every horizon.}
+\caption{Lead-time (single-seed run). The left panel shows ranking skill (ROC-AUC) versus horizon;
+ROC-AUC is noisy at short horizons and only at 24h does GraphSAGE pull clearly ahead ($0.65$). The
+right panel shows precision lift over the base rate: every model stays near zero lift below 24h,
+where skill first emerges.}
 \label{fig:leadtime}
 \end{figure*}
 
