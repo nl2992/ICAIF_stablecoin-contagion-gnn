@@ -617,17 +617,17 @@ Condition & PR-AUC & vs.\ XGBoost \\
 \end{table}
 
 \section{Interpretation and the exported hub ranking}\label{sec:interp}
-Beyond prediction, a risk team needs to know which venues are central. The strongest individual predictors are OU half-life and 24-hour volatility, economically meaningful features rather than artefacts.
+Beyond prediction, a risk team needs to know which venues are central.
 
 We summarize each crisis with an interpretable \emph{hub ranking} that
-combines three ingredients. The first is \emph{occlusion}, which measures how much the model's
-predictions change when a node is removed from the graph,
+combines three ingredients. The first is the node's \emph{learned importance} under
+\textbf{GNNExplainer}~\cite{ying2019gnnexplainer}, the total attribution mask weight it assigns to
+node $j$'s features,
 \begin{equation}
-\mathrm{Occ}_j=\frac{1}{|\mathcal{T}|}\sum_{t\in\mathcal{T}}\big\|\hat{\mathbf{y}}(G_t)-\hat{\mathbf{y}}(G_t\setminus j)\big\|_1,
+\mathrm{Imp}_j=\textstyle\sum_{f} m_{j,f},
 \end{equation}
-a perturbation-based and software-version-robust alternative to GNNExplainer-style
-masks~\cite{ying2019gnnexplainer}. A large $\mathrm{Occ}_j$ just means the model relies heavily on
-node $j$. The second is graph \emph{betweenness centrality} (undirected, the standard
+where $m_{j,f}\in[0,1]$ is the learned mask on feature $f$ of node $j$ (five-seed mean). A large
+$\mathrm{Imp}_j$ means the model relies heavily on node $j$. The second is graph \emph{betweenness centrality} (undirected, the standard
 network-centrality benchmark), the share of shortest paths that pass through $j$,
 \begin{equation}
 b_j=\sum_{s\neq j\neq u}\frac{\sigma_{su}(j)}{\sigma_{su}},
@@ -639,7 +639,7 @@ with the model. For the USDC/SVB crisis the exported hub score ranks \textbf{BUS
 
 The correlational measures do not even agree with \emph{each other}
 (Table~\ref{tab:hubreconcile}): undirected betweenness crowns the co-mover BUSD,
-occlusion \emph{also} ranks BUSD first ($1.00$) but places USDC close behind
+the GNNExplainer importance \emph{also} ranks BUSD first ($1.00$) but places USDC close behind
 ($0.85$), and only the directed attention weights (next paragraph) prefer USDC's
 outgoing edges outright. The exported score, dominated by betweenness, inherits
 its error, which is exactly the disagreement only the causal knockout can settle.
@@ -647,7 +647,7 @@ its error, which is exactly the disagreement only the causal knockout can settle
 \begin{table}[t]
 \caption{The hub ranking is correlational, and the correlational measures disagree
 \emph{with each other} (USDC/SVB crisis). Undirected betweenness crowns the co-mover
-BUSD; occlusion also ranks BUSD first ($1.00$) with USDC close behind ($0.85$); only
+BUSD; the GNNExplainer mask also ranks BUSD first ($1.00$) with USDC close behind ($0.85$); only
 directed attention names the true source USDC, and only the causal knockout is
 decisive. Each column normalised to its maximum. Causal $\Delta$ is the contagion reduction
 from a full backstop, computed by the companion causal model (final paragraph of this section).}
@@ -656,7 +656,7 @@ from a full backstop, computed by the companion causal model (final paragraph of
 \setlength{\tabcolsep}{3.5pt}
 \begin{tabular}{lrrrr}
 \toprule
-Venue & Between. & Occlusion & Atten.$^\dagger$ & Causal $\Delta$ \\
+Venue & Between. & GNNExpl. & Atten.$^\dagger$ & Causal $\Delta$ \\
 \midrule
 BUSD & \textbf{1.00} & \textbf{1.00} & 0.41 & \textbf{0\%} \\
 USDC & 0.00 & 0.85 & \textbf{0.51} & \textbf{100\%} \\
