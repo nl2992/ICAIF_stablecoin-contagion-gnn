@@ -1,0 +1,12 @@
+{
+  "n_perms": 100,
+  "horizon_min": 1440,
+  "base_rate": 0.2932,
+  "null_pr_auc_mean": 0.3025,
+  "null_pr_auc_std": 0.0353,
+  "null_pr_auc_min": 0.2428,
+  "null_pr_auc_max": 0.387,
+  "gat_pr_auc": 0.4465,
+  "empirical_p_value": 0.0,
+  "note": "XGBoost trained on randomly permuted training labels, evaluated on real test labels. Under H0 (no signal), PR-AUC should equal the base rate. GAT headline PR-AUC from multiseed_summary_h1440.json (5-seed mean, SVB cluster)."
+}

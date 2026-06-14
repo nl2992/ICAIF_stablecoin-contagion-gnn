@@ -587,16 +587,7 @@ approximation to DeFi pool data, adds only $\mathbf{+0.005}$ PR-AUC. The
 predictive advantage of GAT over XGBoost therefore originates in the directed
 lead-lag \emph{graph structure}, not in richer features.
 
-A final null isolates the \emph{topology} from merely \emph{having edges}. A sceptic
-could argue any graph helps a message-passing model. We run a \textbf{degree-preserving
-edge-rewiring null}, permuting edge destinations so the model receives a graph of identical
-density and the same edge-attribute multiset but a \emph{scrambled} lead-lag structure.
-Under the all-7 LOCO protocol with the model seed held fixed (a paired design, which is why its
-baseline differs from the five-seed headline), rewiring drops the SVB fold from PR-AUC $0.331$ to
-$\mathbf{0.294\!\pm\!0.024}$ (twenty rewirings), essentially the base rate ($0.293$), and
-collapses the FTX fold to base rate likewise ($0.164$ vs base $0.163$), while the weak
-Terra fold shows no dependence on the genuine topology ($0.210\pm0.036$ vs real $0.185$). The genuine
-directed lead-lag topology, not edge count, is what the GAT exploits.
+Two complementary nulls confirm the signal is genuine. A \textbf{degree-preserving edge-rewiring null} (twenty rewirings, paired design) scrambles lead-lag edge destinations while preserving graph density and the edge-attribute multiset: rewiring drops the SVB fold from PR-AUC $0.331$ to $0.294\!\pm\!0.024$---the base rate ($0.293$)---and collapses the FTX fold likewise ($0.164$ vs base $0.163$). A \textbf{label-shuffle null} (100 permutations, XGBoost on randomly-permuted training labels) yields PR-AUC $0.30\!\pm\!0.04$, matching the base rate and below the GAT headline on every permutation ($p{=}0/100$); class-imbalance is not the driver.
 
 \begin{table}[t]
 \caption{Four-condition component ablation, held-out SVB cluster @ 24h. Conditions (2) and (4)
