@@ -712,14 +712,7 @@ during the Terra--USDT episode ($\hat{p}\approx0.70$). The false negatives are \
 misses: gradual depegs scored near zero ($\hat{p}\approx0.08$) where the 6h lead-lag signal is too
 weak. Future work includes regulatory-event filters and finer snapshot granularity.
 
-\paragraph{Reconciling with prior on-chain GNNs} Prior work on six-hour bridge-swap
-link prediction~\cite{zhou2025bridge} finds GraphSAGE beats GAT on a dense ten-node pool graph
-where node features dominate. The apparent contradiction is resolved by edge semantics.
-In that dense-link setting, uniform averaging is efficient and attention adds variance. In our
-sparse, directional contagion graph, a handful of edges carry nearly all the signal and
-the rest are co-movement noise, exactly the regime where attention pays. Our edge ablation
-confirms this. Directional edges add $10\times$ more lift to GAT than to GraphSAGE; a tentative
-reading consistent with both settings is that attention helps when a few directed edges dominate.
+\paragraph{Reconciling with prior GNNs} \citet{zhou2025bridge} find GraphSAGE beats GAT on a dense bridge-swap graph where node features dominate. Our setting is the opposite: sparse, directional contagion edges where few lead-lag channels carry all the signal. The edge ablation quantifies this directly---directional edges add $10{\times}$ more lift to GAT than to GraphSAGE, exactly the regime where attention pays over uniform averaging.
 
 \subsection{Implications for Risk Management}
 The GAT hub ranking is operationalizable under GENIUS Act~\cite{genius2025} and
@@ -734,9 +727,11 @@ not, and graph attention adds real, \emph{edge-borne} signal. Across five seeds 
 cluster GAT reaches PR-AUC $0.447\pm0.016$, beating XGBoost by $+0.175$ on every seed, and a
 four-condition ablation pins $+0.10$ of that margin to the directed lead-lag \emph{edges} rather than
 the neural architecture or feature domain (on-chain proxy features add only $+0.005$ to XGBoost).
-Attention names the mechanism, the USDC\,$\to$\,TUSD channel carries $1.9\times$ average attention
+Attention names the mechanism: the USDC\,$\to$\,TUSD channel carries $1.9\times$ average attention
 during the SVB crisis, and explicit temporal memory adds little ($+0.008$), consistent with the 6h
-rolling graph already encoding the dynamics. Four caveats bound the claim. The most important is that
+rolling graph already encoding the dynamics. XGBoost's top feature is the OU mean-reversion
+half-life (gain~$88$ vs realised-volatility $65$), confirming that peg-recovery speed drives the
+early-warning signal more than volatility level. Four caveats bound the claim. The most important is that
 the cross-crisis advantage is \emph{conditional}: GAT's mean leave-one-cluster-out margin is positive
 on all seven episodes but reverses on the stable-five subset (\S\ref{sec:results}); we report this
 boundary rather than an unconditional win (the held-out SVB margin of $+0.175$ stays robust across
