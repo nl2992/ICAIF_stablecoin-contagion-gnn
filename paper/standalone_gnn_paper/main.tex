@@ -402,7 +402,7 @@ rate, and the graph models in particular show essentially \emph{no} lift; short-
 onset is not predictable from price microstructure in our data. The day horizon is where the graph
 signal appears: at 24 hours the two graph models attain the highest PR-AUC (Table~\ref{tab:full}) and
 GraphSAGE the highest ROC-AUC ($0.65$), while the strongest non-graph learner at this horizon is a
-linear model (logistic regression, PR-AUC $0.357$), not the gradient-boosted trees. This hour-scale
+linear model (logistic regression, PR-AUC $0.357$ in Table~\ref{tab:full}), not the gradient-boosted trees. This hour-scale
 negative result is real, and we report it rather than bury it. It honestly scopes the positive claim
 to the day horizon.
 
@@ -704,12 +704,13 @@ The pre-registered criterion is met on all three across all seeds, and the four-
 ablation independently confirms the edge contribution. Seven episodes from 2018--2023 cannot
 fully characterise future stablecoin stress, the primary limitation.
 
-\paragraph{Failure modes} 61 misclassified cases span three types. (1) all 30 false positives
-concentrate on BUSD/Binance during FTX ($\hat{p}=0.95$--$0.97$, y=0), a regulatory wind-down
-whose elevated log-volume pattern-matches pre-contagion stress. (2) gradual-onset USDT contagion
-is under-classified ($\hat{p}=0.23$) due to insufficient cross-venue lead-lag signal at 6h.
-(3) thin 2018-era pre-DeFi episodes lack message-passing coverage. Future work includes
-regulatory-event filters and finer snapshot granularity.
+\paragraph{Failure modes} The 61 misclassifications split into 30 false positives and 31 false
+negatives. The false positives are \emph{spurious-edge} errors---the model flags a calm venue
+because a strongly attended neighbour is stressed---and cluster on co-movers: BUSD/Binance during
+FTX ($\hat{p}\approx0.95$), USDT and USDC during the SVB weekend ($\hat{p}\approx1.0$), and USDP/USDC
+during the Terra--USDT episode ($\hat{p}\approx0.70$). The false negatives are \emph{slow-onset}
+misses: gradual depegs scored near zero ($\hat{p}\approx0.08$) where the 6h lead-lag signal is too
+weak. Future work includes regulatory-event filters and finer snapshot granularity.
 
 \paragraph{Reconciling with prior on-chain GNNs} Prior work on six-hour bridge-swap
 link prediction~\cite{zhou2025bridge} finds GraphSAGE beats GAT on a dense ten-node pool graph
@@ -722,7 +723,7 @@ reading consistent with both settings is that attention helps when a few directe
 
 \subsection{Implications for Risk Management}
 The GAT hub ranking is operationalizable under GENIUS Act~\cite{genius2025} and
-MiCA~\cite{mica2023} requirements: per-venue attention spikes toward USDC and DAI 24--48 hours
+MiCA~\cite{mica2023} requirements: per-venue attention spikes toward USDC 24--48 hours
 before the SVB depeg using only public price feeds. But the score \emph{flags} candidates; a causal
 model determines which warrant intervention (the top correlational hub BUSD proved non-pivotal), so
 treat the GAT score as a triage signal, not a direct intervention target.
