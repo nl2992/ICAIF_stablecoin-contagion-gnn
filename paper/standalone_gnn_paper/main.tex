@@ -38,7 +38,7 @@ topology and microstructure are complementary, with directed lead-lag edges addi
 specifically because attention concentrates on the few informative neighbour edges that uniform
 aggregation cannot. (iii)~The model exports an interpretable per-crisis \textbf{hub ranking}, but we
 stress that this ranking is \emph{correlational}, and hand it to a causal test that overturns its
-top-ranked hub. Attention weights name the dominant SVB-crisis channel
+top-ranked hub. Attention weights name the dominant cross-crisis channel
 (USDC/Binance\,$\to$\,TUSD/Binance, $1.9\times$ the average edge), and we report deployment
 diagnostics (poor raw calibration, repaired by isotonic recalibration) for operational use.
 \end{abstract}
@@ -662,7 +662,7 @@ DAI  & 0.00 & 0.00 & --- & 98\% \\
 \end{tabular}
 \end{table}
 
-Examining raw attention weights over the 48-snapshot window before the SVB peak: the top-attended edge is \textbf{USDC$\,\to\,$TUSD} ($\bar\alpha=0.51$, $1.9\times$ the network average). USDC/Binance appears in four of the top-ten edges, the highest outgoing attention of any node, marking it---in the model's learned representation---as the leading candidate contagion \emph{source} before the depeg was visible. The top-attended edge is a predictive lead-lag channel, not necessarily a documented collateral link, one more reason to treat attention as correlational evidence.
+Examining raw attention weights over the 48-snapshot pre-peak window (pooled episodes): the top-attended edge is \textbf{USDC$\,\to\,$TUSD} ($\bar\alpha=0.51$, $1.9\times$ the network average). USDC/Binance appears in four of the top-ten edges, the highest outgoing attention of any node, marking it---in the model's learned representation---as the leading candidate contagion \emph{source} before the depeg was visible. The top-attended edge is a predictive lead-lag channel, not necessarily a documented collateral link, one more reason to treat attention as correlational evidence.
 
 We stop at \emph{ranking}. Centrality and attention are \emph{correlational}: they reward a venue for
 moving with the crisis, not for causing the spread. Whether the top hub is actually \emph{causally}
@@ -719,7 +719,7 @@ cluster GAT reaches PR-AUC $0.447\pm0.016$, beating XGBoost by $+0.175$ on every
 four-condition ablation pins $+0.10$ of that margin to the directed lead-lag \emph{edges} rather than
 the neural architecture or feature domain (on-chain proxy features add only $+0.005$ to XGBoost).
 Attention names the mechanism: the USDC\,$\to$\,TUSD channel carries $1.9\times$ average attention
-during the SVB crisis, and explicit temporal memory adds little ($+0.008$), consistent with the 6h
+across crisis episodes, and explicit temporal memory adds little ($+0.008$), consistent with the 6h
 rolling graph already encoding the dynamics. XGBoost's top feature is the OU mean-reversion
 half-life (gain~$88$ vs realised-volatility $65$), confirming that peg-recovery speed drives the
 early-warning signal more than volatility level. Four caveats bound the claim. The most important is that
