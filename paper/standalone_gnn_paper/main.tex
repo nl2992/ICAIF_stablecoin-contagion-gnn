@@ -342,7 +342,7 @@ $\alpha_{jk}$ for each edge and forms a \emph{weighted} sum,
 \begin{equation}
 \mathbf{h}_j^{(\ell)}=\sigma\!\Big(\textstyle\sum_{k\in\mathcal{N}(j)}\alpha_{jk}\,\mathbf{W}^{(\ell)}\mathbf{h}_k^{(\ell-1)}\Big),
 \end{equation}
-where $\mathbf{e}_{jk}$ is the edge's correlation/lead-lag attribute. The crucial difference is in
+where $\mathbf{e}_{jk}$ is the edge's correlation/lead-lag attribute. The key difference is in
 the weights. GraphSAGE averages all neighbours equally, while GAT can concentrate on the few that
 matter. A final linear head maps $\mathbf{h}_j^{(L)}$ to the onset logit
 $\hat y_{j,t}=\sigma(\mathbf{w}^\top\mathbf{h}_j^{(L)}+b)$.
