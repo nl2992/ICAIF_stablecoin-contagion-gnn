@@ -410,7 +410,7 @@ to the day horizon.
 \centering
 \includegraphics[width=0.86\textwidth]{figures/02_leadtime.png}
 \caption{Lead-time (single-seed run). The left panel shows ranking skill (ROC-AUC) versus horizon;
-ROC-AUC is noisy at short horizons and only at 24h does GraphSAGE pull clearly ahead ($0.65$). The
+ROC-AUC is noisy at short horizons and only at 24h does GraphSAGE pull ahead ($0.65$). The
 right panel shows precision lift over the base rate: every model stays near zero lift below 24h,
 where skill first emerges.}
 \label{fig:leadtime}
@@ -428,7 +428,7 @@ sensitivity to initialization in this sample size.
 \begin{table}[t]
 \caption{Full model ladder on the held-out SVB cluster at 24h. PR-AUC and ROC-AUC are the primary
 metrics. The base rate is $0.293$. GNN rows report 5-seed means. All others are single-seed.
-Only the two graph models show ROC-AUC clearly above chance.
+Only the two graph models show ROC-AUC above chance.
 Raw outputs are poorly calibrated (ECE $0.23$--$0.26$); a monotonic isotonic recalibration reduces
 GAT ECE to ${\approx}0.02$ (out-of-sample; committed artifact
 \texttt{calibration\_recalibrated\_h1440.csv}) and, being order-preserving, leaves the PR-AUC
