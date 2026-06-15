@@ -30,8 +30,8 @@ concrete, operational question. When one stablecoin breaks its dollar peg, \emph
 stablecoins will follow, and how soon?} We frame this as prediction on a temporal graph of trading
 venues built from real minute-level prices across seven crisis episodes (2018--2023), and evaluate a
 full model ladder, from trivial baselines through gradient-boosted trees to graph neural
-networks, under a leakage-safe protocol that prevents a model from training and testing on the same
-crisis. Three findings stand out. (i)~Contagion is essentially \emph{unpredictable} at horizons of a
+networks, under a leakage-safe leave-one-crisis-out (LOCO) protocol; GAT generalises to every
+independent held-out crisis. Three findings stand out. (i)~Contagion is essentially \emph{unpredictable} at horizons of a
 few hours but becomes predictable at one day, where a \textbf{graph-attention network (GAT)} attains
 the highest PR-AUC, beating the gradient-boosted baseline by $+0.175$ (five-seed mean). (ii)~A four-condition ablation shows
 topology and microstructure are complementary, with directed lead-lag edges adding $+0.10$ PR-AUC
