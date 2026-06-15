@@ -467,7 +467,7 @@ ablation.
 Under a fixed alert budget (Table~\ref{tab:preck}, GAT as a 5-seed mean$\pm$std over the headline-PR-AUC
 seeds), the robust operating point is the \emph{oracle budget}: at $k{=}545$ (the true onsets) GAT holds
 $0.29\pm0.04$ versus XGBoost's $0.19$, a $1.55\times$ lift stable across seeds. At tighter budgets GAT
-still surfaces onsets XGBoost never does ($0.18\pm0.16$ at $k{=}10$, $0.16\pm0.07$ at $k{=}25$, vs.\
+still detects onsets XGBoost never does ($0.18\pm0.16$ at $k{=}10$, $0.16\pm0.07$ at $k{=}25$, vs.\
 XGBoost $0.00$), but top-of-list precision is seed-sensitive, so we report the multi-seed distribution,
 not a favourable run. XGBoost provides no triage signal at any budget.
 
@@ -684,7 +684,7 @@ false positive that na\"{i}ve hub protection would have missed.
 
 \section{Discussion}
 \paragraph{Operating points} A risk desk consumes a ranked alert list, not an AUC. GAT delivers a
-stable lift at the oracle budget and surfaces onsets at tight budgets where XGBoost never does
+stable lift at the oracle budget and detects onsets at tight budgets where XGBoost never does
 (Table~\ref{tab:preck})---the difference between a usable watchlist and noise---because a venue's risk
 is read partly from \emph{which of its neighbours are already stressed}, which a per-venue tabular
 model cannot see.
