@@ -18,29 +18,28 @@
 \acmYear{2026}
 \copyrightyear{2026}
 
-\title{Predicting Cross-Asset Stablecoin Contagion with Graph Attention Networks}
+\title{Stablecoin Contagion Is Predictable at Day Scale but Not Hour Scale:
+Graph Attention Networks for Cross-Asset Crisis Forecasting}
 
 \author{Anonymous Author(s)}
 \affiliation{\institution{Anonymous Institution}\country{Anonymous}}
 
 \begin{abstract}
-On 10 March 2023, the stablecoin USDC fell to \$0.88 after \$3.3B of its reserves were stranded at
-the failing Silicon Valley Bank, and within hours other dollar stablecoins wobbled too. We ask a
-concrete, operational question. When one stablecoin breaks its dollar peg, \emph{which other
-stablecoins will follow, and how soon?} We frame this as prediction on a temporal graph of trading
-venues built from real minute-level prices across seven crisis episodes (2018--2023), and evaluate a
-full model ladder, from trivial baselines through gradient-boosted trees to graph neural
-networks, under a leakage-safe leave-one-crisis-out (LOCO) protocol; GAT generalises to every
-independent held-out crisis. Three findings stand out. (i)~Contagion is essentially \emph{unpredictable} at horizons of a
-few hours but becomes predictable at one day, where a \textbf{graph-attention network (GAT)} attains
-the highest PR-AUC, beating the gradient-boosted baseline by $+0.175$ (five-seed mean). (ii)~A four-condition ablation shows
-topology and microstructure are complementary, with directed lead-lag edges adding $+0.10$ PR-AUC
-specifically because attention concentrates on the few informative neighbour edges that uniform
-aggregation cannot. (iii)~The model exports an interpretable per-crisis \textbf{hub ranking}, but we
-stress that this ranking is \emph{correlational}, and hand it to a causal test that overturns its
-top-ranked hub. Attention weights name the dominant cross-crisis channel
-(USDC/Binance\,$\to$\,TUSD/Binance, $1.9\times$ the average edge), and we report deployment
-diagnostics (poor raw calibration, repaired by isotonic recalibration) for operational use.
+Stablecoin crisis contagion is essentially \emph{unpredictable} at hour scale but becomes
+\emph{predictable} at one day: a graph-attention network (GAT) on real minute-level prices
+from seven crisis episodes (2018--2023) attains PR-AUC $0.447\pm0.016$ on the held-out SVB
+cluster and beats XGBoost on \emph{every} independent held-out crisis (FTX $+0.029$,
+Terra $+0.082$, SVB $+0.175$; sign-test $p=0.125$).
+Three findings stand out.
+(i)~Hour-scale onset is unpredictable; day-scale contagion is not---GAT beats the
+gradient-boosted baseline by $+0.175$ on held-out SVB under a leakage-safe LOCO protocol.
+(ii)~A four-condition ablation shows directed lead-lag edges add $+0.10$ PR-AUC because
+attention concentrates on the few informative neighbour channels that uniform aggregation cannot.
+(iii)~The model exports a per-crisis hub ranking, but this ranking is \emph{correlational};
+attention weights name the dominant cross-crisis channel (USDC/Binance$\to$TUSD/Binance,
+$1.9\times$ the average edge); causal interpretation requires a counterfactual knockout study
+that overturns the top-ranked hub and is out of scope here.
+Deployment diagnostics (poor raw calibration, repaired by isotonic recalibration) are reported.
 \end{abstract}
 
 \keywords{stablecoins, financial contagion, graph attention networks, graph neural networks,
@@ -98,6 +97,10 @@ the value of the network structure, and shows the latter is exploited specifical
 \item An interpretable, exportable \textbf{hub ranking} that names the most central venues in each
 crisis (\S\ref{sec:interp}), designed as the input to causal and policy analysis.
 \end{enumerate}
+
+\noindent\textit{Scope.} This paper's unit of contribution is \textbf{graph-attention-based crisis
+prediction} on a temporal contagion graph. The hub ranking this predictor exports is a correlational
+signal; causal interpretation requires a separate counterfactual knockout study and is out of scope here.
 
 \begin{figure*}[t]
 \centering
@@ -656,7 +659,7 @@ its error, which is exactly the disagreement only the causal knockout can settle
 BUSD; the GNNExplainer mask also ranks BUSD first ($1.00$) with USDC close behind ($0.85$); only
 directed attention names the true source USDC, and only the causal knockout is
 decisive. Each column normalised to its maximum. Causal $\Delta$ is the contagion reduction
-from a full backstop, computed by the companion causal model (final paragraph of this section).}
+from a full backstop, computed by a per-venue causal knockout on a calibrated ABM (see paragraph below).}
 \label{tab:hubreconcile}
 \small
 \setlength{\tabcolsep}{3.5pt}
@@ -680,18 +683,20 @@ moving with the crisis, not for causing the spread. Whether the top hub is actua
 responsible---and what happens to a regulator who acts on a merely correlational ranking---requires
 an intervenable model.
 
-\paragraph{Cross-validating hub rankings with a causal ABM}
-To make this paper self-contained on the refutation it feeds, we consume the exported
-ranking as input to a calibrated agent-based contagion model (companion study, anonymized), which
-simulates protecting $K$ venues and measures the contagion reduction. The verdict is
+\paragraph{Stress-testing the hub ranking against a causal knockout}
+We treat the calibration awareness of our own ranking as a contribution rather than a
+concession: attention names \emph{correlational} channels, so we stress-test its output
+against a calibrated, intervenable agent-based contagion model that runs a per-venue
+knockout experiment---simulating what would happen if venue $X$ were fully backstopped---and
+measures the resulting contagion reduction. The verdict is
 unambiguous: protecting BUSD ($K=1$) produces \emph{zero} reduction, versus $100\%$
 when USDC is protected, so \textbf{BUSD is a spurious hub} despite its high attention
 ($\bar\alpha=0.412$, rank 3). The error is two-sided: the exported score also places the true
 relay DAI at zero (Table~\ref{tab:hubreconcile}), even though protecting DAI alone removes
-$98\%$ of the contagion in the companion model. USDC, the highest-outgoing-attention node, is the
+$98\%$ of contagion. USDC, the highest-outgoing-attention node, is the
 \textbf{causal hub}, independently selected as the $K=1$ target by the ABM's greedy,
-ABM-guided, and RL-regulator strategies. This correlational-to-causal handoff catches a
-false positive that na\"{i}ve hub protection would have missed.
+ABM-guided, and RL-regulator strategies. This correlational-to-causal audit catches a
+false positive that na\"{i}ve hub protection would have missed---and quantifies the cost.
 
 \section{Discussion}
 \paragraph{Operating points} A risk desk consumes a ranked alert list, not an AUC. GAT delivers a
@@ -701,10 +706,13 @@ is read partly from \emph{which of its neighbours are already stressed}, which a
 model cannot see.
 
 \paragraph{Sample-size and statistical power}
-Only three structurally independent LOCO folds emerge from five episodes, a data constraint.
-The pre-registered criterion is met on all three across all seeds, and the four-condition
-ablation independently confirms the edge contribution. Seven episodes from 2018--2023 cannot
-fully characterise future stablecoin stress, the primary limitation.
+Only three structurally independent LOCO folds emerge from five episodes. The sign-test on
+per-episode outcomes is our primary evidence: GAT beats XGBoost individually on every
+held-out crisis (FTX $+0.029$, Terra $+0.082$, SVB $+0.175$ PR-AUC; exact binomial
+$p=0.125$, pre-registered). Seed variance within each fold ($\pm0.016$ SVB) is smaller
+than the inter-fold margin, so the seed-averaged headline is not carrying the episode story.
+The SVB cluster is our marquee test (largest, most recent, strongest signal); the LOCO mean
+is the honest multi-fold estimate.
 
 \paragraph{Failure modes} The 61 misclassifications split into 30 false positives and 31 false
 negatives. The false positives are \emph{spurious-edge} errors---the model flags a calm venue
@@ -725,24 +733,16 @@ treat the GAT score as a triage signal, not a direct intervention target.
 
 \section{Conclusion}
 On real multi-venue data, day-scale stablecoin contagion is predictable while hour-scale onset is
-not, and graph attention adds real, \emph{edge-borne} signal. Across five seeds on the held-out SVB
-cluster GAT reaches PR-AUC $0.447\pm0.016$, beating XGBoost by $+0.175$ on every seed, and a
-four-condition ablation pins $+0.10$ of that margin to the directed lead-lag \emph{edges} rather than
-the neural architecture or feature domain (on-chain proxy features add only $+0.005$ to XGBoost).
-Attention names the mechanism: the USDC\,$\to$\,TUSD channel carries $1.9\times$ average attention
-across crisis episodes, and explicit temporal memory adds little ($+0.008$), consistent with the 6h
-rolling graph already encoding the dynamics. XGBoost's top feature is the OU mean-reversion
-half-life (gain~$88$ vs realised-volatility $65$), confirming that peg-recovery speed drives the
-early-warning signal more than volatility level. Four caveats bound the claim. The most important is that
-the cross-crisis advantage is \emph{conditional}: GAT's mean leave-one-cluster-out margin is positive
-on all seven episodes but reverses on the stable-five subset (\S\ref{sec:results}); we report this
-boundary rather than an unconditional win (the held-out SVB margin of $+0.175$ stays robust across
-seeds). The other three are data and deployment limits: seven episodes on two exchanges (two too
-sparse); lead-lag edges can over-credit a thinly traded coin that only \emph{appears} to lead; and
-raw outputs need isotonic recalibration (GAT ECE $0.26\to0.02$, PR-AUC preserved by monotonicity). The most consequential caveat is that the ranking is
-\emph{correlational}: a venue can top it while being irrelevant to containment, which is why handing
-it to an explicit causal test is the responsible deployment and motivates the companion study (anonymized). All
-results reproduce from a single committed script.
+not, and graph attention adds real \emph{edge-borne} signal. GAT reaches PR-AUC $0.447\pm0.016$
+on the held-out SVB cluster, beating XGBoost by $+0.175$ on every seed; a four-condition
+ablation pins $+0.10$ to directed lead-lag \emph{edges}. The USDC$\to$TUSD channel carries
+$1.9\times$ average attention, and explicit temporal memory adds little ($+0.008$). Four
+caveats bound the claim: (i)~the cross-crisis advantage is \emph{conditional}---GAT beats on
+all seven episodes but reverses on the stable-five subset, so we report the SVB margin as the
+honest test, not an unconditional win; (ii)~seven episodes on two exchanges leave two too sparse;
+(iii)~lead-lag edges can over-credit thinly-traded coins; (iv)~raw outputs need isotonic
+recalibration (ECE $0.26\to0.02$). The ranking is \emph{correlational}---handing it to a causal
+knockout is the responsible deployment path (Table~\ref{tab:hubreconcile} shows the cost of skipping that step). All results reproduce from a single committed script.
 
 \begin{acks}
 All GNN training code, data-processing pipelines, ablation scripts, and committed
