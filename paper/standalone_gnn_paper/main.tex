@@ -38,8 +38,9 @@ attention concentrates on the few informative neighbour channels that uniform ag
 (iii)~The model exports a per-crisis hub ranking, but this ranking is \emph{correlational};
 attention weights name the dominant cross-crisis channel (USDC/Binance$\to$TUSD/Binance,
 $1.9\times$ the average edge); causal interpretation requires a counterfactual knockout study
-that overturns the top-ranked hub and is out of scope here.
-Deployment diagnostics (poor raw calibration, repaired by isotonic recalibration) are reported.
+that is out of scope here.
+Deployment diagnostics are reported: raw GAT probabilities are miscalibrated (ECE $0.26$), but an
+order-preserving isotonic recalibration repairs them (ECE $0.02$) without altering the ranking.
 \end{abstract}
 
 \keywords{stablecoins, financial contagion, graph attention networks, graph neural networks,
@@ -96,13 +97,16 @@ the value of the network structure, and shows the latter is exploited specifical
 (\S\ref{sec:ablation}).
 \item An interpretable, exportable \textbf{hub ranking} that names the most central venues in each
 crisis (\S\ref{sec:interp}), designed as the input to causal and policy analysis.
+\item A \textbf{deployment-calibration} diagnostic: raw GAT probabilities are badly miscalibrated, but a
+single order-preserving isotonic map repairs them (ECE $0.26\!\to\!0.02$) without changing the ranking
+(\S\ref{sec:results}).
 \end{enumerate}
 
 \noindent\textit{Scope.} This paper's unit of contribution is \textbf{graph-attention-based crisis
 prediction} on a temporal contagion graph. The hub ranking this predictor exports is a correlational
-signal; original causal inference is not our contribution. In \S\ref{sec:interp} we audit the
-exported ranking against a calibrated, intervenable contagion model as a responsible-deployment
-check---this audit is illustrative, not the primary claim.
+signal; original causal inference is not our contribution. In \S\ref{sec:interp} we note that the
+exported ranking must be validated against a calibrated, intervenable contagion model before
+deployment; performing that causal validation is outside this paper's scope.
 
 \begin{figure*}[t]
 \centering
@@ -653,28 +657,26 @@ The correlational measures do not even agree with \emph{each other}
 the GNNExplainer importance \emph{also} ranks BUSD first ($1.00$) but places USDC close behind
 ($0.85$), and only the directed attention weights (next paragraph) prefer USDC's
 outgoing edges outright. The exported score, dominated by betweenness, inherits
-its error, which is exactly the disagreement only the causal knockout can settle.
+its error---a disagreement that only an intervenable counterfactual could settle.
 
 \begin{table}[t]
 \caption{The hub ranking is correlational, and the correlational measures disagree
 \emph{with each other} (USDC/SVB crisis). Undirected betweenness crowns the co-mover
 BUSD; the GNNExplainer mask also ranks BUSD first ($1.00$) with USDC close behind ($0.85$); only
-directed attention names the true source USDC, and only the causal knockout is
-decisive. Each column normalised to its maximum. Causal $\Delta$ is the contagion reduction
-from a full backstop, computed by a per-venue causal knockout on a calibrated ABM (see paragraph below).}
+directed attention names the true source USDC. Each column normalised to its maximum.}
 \label{tab:hubreconcile}
 \small
 \setlength{\tabcolsep}{3.5pt}
-\begin{tabular}{lrrrr}
+\begin{tabular}{lrrr}
 \toprule
-Venue & Between. & GNNExpl. & Atten.$^\dagger$ & Causal $\Delta$ \\
+Venue & Between. & GNNExpl. & Atten.$^\dagger$ \\
 \midrule
-BUSD & \textbf{1.00} & \textbf{1.00} & 0.41 & \textbf{0\%} \\
-USDC & 0.00 & 0.85 & \textbf{0.51} & \textbf{100\%} \\
-TUSD & 0.00 & 0.53 & --- & --- \\
-DAI  & 0.00 & 0.00 & --- & 98\% \\
+BUSD & \textbf{1.00} & \textbf{1.00} & 0.41 \\
+USDC & 0.00 & 0.85 & \textbf{0.51} \\
+TUSD & 0.00 & 0.53 & --- \\
+DAI  & 0.00 & 0.00 & --- \\
 \bottomrule
-\multicolumn{5}{@{}p{0.97\columnwidth}@{}}{\footnotesize $^\dagger$Top outgoing-edge mean attention $\bar\alpha$, 48-snapshot pre-peak window (network avg.\ ${\approx}0.27$).}
+\multicolumn{4}{@{}p{0.97\columnwidth}@{}}{\footnotesize $^\dagger$Top outgoing-edge mean attention $\bar\alpha$, 48-snapshot pre-peak window (network avg.\ ${\approx}0.27$).}
 \end{tabular}
 \end{table}
 
@@ -685,20 +687,11 @@ moving with the crisis, not for causing the spread. Whether the top hub is actua
 responsible---and what happens to a regulator who acts on a merely correlational ranking---requires
 an intervenable model.
 
-\paragraph{Stress-testing the hub ranking against a causal knockout}
-We treat the calibration awareness of our own ranking as a contribution rather than a
-concession: attention names \emph{correlational} channels, so we stress-test its output
-against a calibrated, intervenable agent-based contagion model that runs a per-venue
-knockout experiment---simulating what would happen if venue $X$ were fully backstopped---and
-measures the resulting contagion reduction. The verdict is
-unambiguous: protecting BUSD ($K=1$) produces \emph{zero} reduction, versus $100\%$
-when USDC is protected, so \textbf{BUSD is a spurious hub} despite its high attention
-($\bar\alpha=0.412$, rank 3). The error is two-sided: the exported score also places the true
-relay DAI at zero (Table~\ref{tab:hubreconcile}), even though protecting DAI alone removes
-$98\%$ of contagion. USDC, the highest-outgoing-attention node, is the
-\textbf{causal hub}, independently selected as the $K=1$ target by the ABM's greedy,
-ABM-guided, and RL-regulator strategies. This correlational-to-causal audit catches a
-false positive that na\"{i}ve hub protection would have missed---and quantifies the cost.
+\paragraph{Causal validation is out of scope} Settling which hub is causally \emph{pivotal}
+requires a calibrated, intervenable counterfactual---a per-venue knockout on a contagion
+model---which lies outside this prediction study. We therefore report the hub ranking strictly
+as a triage signal whose top candidate must be confirmed causally before any intervention, and
+leave that confirmation to dedicated causal work.
 
 \section{Discussion}
 \paragraph{Operating points} A risk desk consumes a ranked alert list, not an AUC. GAT delivers a
@@ -706,6 +699,15 @@ stable lift at the oracle budget and detects onsets at tight budgets where XGBoo
 (Table~\ref{tab:preck})---the difference between a usable watchlist and noise---because a venue's risk
 is read partly from \emph{which of its neighbours are already stressed}, which a per-venue tabular
 model cannot see.
+
+\paragraph{Calibration for deployment} A triage desk thresholds a \emph{probability}, not a rank, so the
+scores must mean what they claim. Raw GAT outputs are badly miscalibrated---expected calibration error
+(ECE) $0.23$--$0.26$, so the predicted depeg probabilities are systematically untrustworthy. A single
+monotone \emph{isotonic} recalibration, fit on the validation fold and evaluated out-of-sample, cuts GAT
+ECE to ${\approx}0.02$; because the map is order-preserving it leaves every PR-AUC and ranking result
+above unchanged (committed artifact \texttt{calibration\_recalibrated\_h1440.csv}). The operational rule
+is therefore simple: rank with the raw model, but recalibrate before any score is read as a probability
+or compared against a fixed alert threshold.
 
 \paragraph{Sample-size and statistical power}
 Only three structurally independent LOCO folds emerge from five episodes. The sign-test on
@@ -730,7 +732,7 @@ weak. Future work includes regulatory-event filters and finer snapshot granulari
 The GAT hub ranking is operationalizable under GENIUS Act~\cite{genius2025} and
 MiCA~\cite{mica2023} requirements: per-venue attention spikes toward USDC 24--48 hours
 before the SVB depeg using only public price feeds. But the score \emph{flags} candidates; a causal
-model determines which warrant intervention (the top correlational hub BUSD proved non-pivotal), so
+model determines which warrant intervention, so
 treat the GAT score as a triage signal, not a direct intervention target.
 
 \section{Conclusion}
@@ -743,8 +745,8 @@ caveats bound the claim: (i)~the cross-crisis advantage is \emph{conditional}---
 all seven episodes but reverses on the stable-five subset, so we report the SVB margin as the
 honest test, not an unconditional win; (ii)~seven episodes on two exchanges leave two too sparse;
 (iii)~lead-lag edges can over-credit thinly-traded coins; (iv)~raw outputs need isotonic
-recalibration (ECE $0.26\to0.02$). The ranking is \emph{correlational}---handing it to a causal
-knockout is the responsible deployment path (Table~\ref{tab:hubreconcile} shows the cost of skipping that step). All GNN prediction results reproduce from a single committed script.
+recalibration (ECE $0.26\to0.02$). The ranking is \emph{correlational}---validating it against an intervenable
+counterfactual is the responsible deployment path before any hub is acted upon. All GNN prediction results reproduce from a single committed script.
 
 \begin{acks}
 All GNN training code, data-processing pipelines, ablation scripts, and committed
