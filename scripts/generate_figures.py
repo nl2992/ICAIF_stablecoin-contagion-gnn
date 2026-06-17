@@ -62,10 +62,8 @@ def fig_leadtime():
         ax.axhline(ref, color="k", lw=0.8, ls="--", alpha=0.6)
         ax.set_xscale("log"); ax.set_xticks(HORIZONS); ax.set_xticklabels(HLAB)
         ax.set_xlabel("Contagion prediction horizon"); ax.set_ylabel(ylab)
-        ax.set_title(ttl); ax.grid(alpha=0.3)
+        ax.set_title(ttl)
     axes[0].legend(fontsize=8, ncol=2)
-    fig.suptitle("Contagion becomes predictable only at the one-day horizon",
-                 fontsize=12, fontweight="bold")
     fig.tight_layout(); fig.savefig(OUT / "fig1_leadtime_decay.png"); plt.close(fig)
     print("fig1 ok")
 
@@ -146,13 +144,21 @@ def fig_depeg():
     b = load_episode("USDC_SVB")
     idx = pd.to_datetime(b["index_1m_ms"], unit="ms", utc=True)
     fig, ax = plt.subplots(figsize=ps.WIDE)
+    # Muted navy/grey family for the non-origin pegs; the origin is the one maroon accent.
+    _muted = ["#26425a", "#5b7fa6", "#9a9a9a", "#45617a", "#7a8a99", "#8c7d77"]
+    _ci = 0
     for ns in b["active_node_strs"]:
         price = b["dev_bps_1m"][ns] / 1e4 + 1.0
-        ax.plot(idx, price, lw=2.0 if ns == b["origin"] else 1.1,
+        if ns == b["origin"]:
+            col, lw = ps.RED, 2.2
+        else:
+            col, lw = _muted[_ci % len(_muted)], 1.1
+            _ci += 1
+        ax.plot(idx, price, lw=lw, color=col,
                 label=ns.split("/")[0] + (" (origin)" if ns == b["origin"] else ""))
     ax.axhline(1.0, color="k", lw=0.5, ls=":")
-    ax.set_ylabel("price (USD)"); ax.set_title("USDC/SVB: real one-minute peg paths (Binance and Coinbase)")
-    ax.legend(fontsize=8, ncol=3); ax.grid(alpha=0.25)
+    ax.set_ylabel("price (USD)"); ax.set_title("USDC/SVB one-minute peg paths")
+    ax.legend(fontsize=8, ncol=3)
     fig.tight_layout(); fig.savefig(OUT / "fig5_depeg_paths.png"); plt.close(fig)
     print("fig5 ok")
 

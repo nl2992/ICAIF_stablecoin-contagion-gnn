@@ -40,9 +40,9 @@ def fig_network_snapshot():
     fig, ax = plt.subplots(figsize=ps.TALL)
     pos = nx.circular_layout(G)
     depg = [G.nodes[n]["depeg"] for n in G.nodes]
-    nc = nx.draw_networkx_nodes(G, pos, node_size=1700, node_color=depg, cmap=ps.SEQ_CMAP,
-                                vmin=0, vmax=max(depg) if depg else 1, edgecolors="k", ax=ax)
-    nx.draw_networkx_labels(G, pos, font_size=9, font_weight="bold", ax=ax)
+    nc = nx.draw_networkx_nodes(G, pos, node_size=1700, node_color=depg, cmap="Reds",
+                                vmin=0, vmax=max(depg) if depg else 1, edgecolors="#0A1F44", ax=ax)
+    nx.draw_networkx_labels(G, pos, font_size=9, ax=ax)
     if G.edges:
         ws = [G[u][v]["w"] for u, v in G.edges]
         nx.draw_networkx_edges(G, pos, width=[1 + 3 * w for w in ws], edge_color="#555",
