@@ -59,7 +59,7 @@ def apply() -> None:
         "font.family": "serif",
         "font.serif": ["DejaVu Serif", "Times New Roman", "Times"],
         "mathtext.fontset": "dejavuserif",
-        "font.size": 10.5, "axes.titlesize": 11, "axes.titleweight": "bold",
+        "font.size": 10.5, "axes.titlesize": 10.5, "axes.titleweight": "normal",
         "axes.labelsize": 10, "legend.fontsize": 8.5,
         "xtick.labelsize": 9, "ytick.labelsize": 9,
         # Columbia institutional ink: navy axes / text / ticks, not generic black.
@@ -67,9 +67,8 @@ def apply() -> None:
         "axes.titlecolor": NAVY_INK, "axes.edgecolor": NAVY_INK,
         "xtick.color": NAVY_INK, "ytick.color": NAVY_INK,
         "axes.spines.top": False, "axes.spines.right": False,
-        "axes.grid": True, "grid.color": COLUMBIA_MID,
-        "grid.alpha": 0.22, "grid.linewidth": 0.6,
-        "axes.axisbelow": True, "lines.linewidth": 2.0,
+        "axes.grid": False,
+        "axes.axisbelow": True, "lines.linewidth": 1.5,
         "patch.edgecolor": NAVY_INK,
         "legend.frameon": False, "figure.autolayout": False,
     })
