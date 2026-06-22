@@ -10,7 +10,7 @@
 
 **Predictive, interpretable contagion propagation in stablecoin markets using temporal graph neural networks.**
 
-> 📄 **Paper (compiled PDF):** [`paper/standalone_gnn_paper/main.pdf`](paper/standalone_gnn_paper/main.pdf)
+> **Paper (compiled PDF):** [`paper/standalone_gnn_paper/main.pdf`](paper/standalone_gnn_paper/main.pdf)
 > — *"Predicting Cross-Asset Stablecoin Contagion with Graph Attention Networks."* Real Binance+Coinbase data,
 > leakage-safe evaluation, GAT +0.18 PR-AUC at 24h, edge ablation (+0.10), exported hub ranking.
 > Headline results in [`RESULTS.md`](RESULTS.md); regenerate everything with [`reproduce.sh`](reproduce.sh).
