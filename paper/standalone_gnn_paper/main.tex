@@ -27,12 +27,16 @@ Graph Attention Networks for Cross-Asset Crisis Forecasting}
 \begin{abstract}
 Stablecoin crisis contagion is essentially \emph{unpredictable} at hour scale but becomes
 \emph{predictable} at one day: a graph-attention network (GAT) on real minute-level prices
-from seven crisis episodes (2018--2023) attains PR-AUC $0.447\pm0.016$ on the held-out SVB
-cluster and beats XGBoost on \emph{every} independent held-out crisis (FTX $+0.029$,
-Terra $+0.082$, SVB $+0.175$; sign-test $p=0.125$).
+from seven crisis episodes (2018--2023) attains PR-AUC $0.447\pm0.016$ (pre-registered,
+five-seed mean) on the held-out SVB cluster and beats XGBoost on \emph{every} independent
+held-out crisis (FTX $+0.029$, Terra $+0.082$, SVB $+0.175$; sign-test $p=0.125$).
+We report only multi-seed means; a single seed alone can flip the verdict.
 Three findings stand out.
 (i)~Hour-scale onset is unpredictable; day-scale contagion is not---GAT beats the
 gradient-boosted baseline by $+0.175$ on held-out SVB under a leakage-safe LOCO protocol.
+The graph signal helps \emph{most precisely when an episode is label-sparse}, where
+topology substitutes for label density; on the five densest episodes a tabular baseline
+catches up, which we report as an explicit scope boundary, not an unconditional win.
 (ii)~A four-condition ablation shows directed lead-lag edges add $+0.10$ PR-AUC because
 attention concentrates on the few informative neighbour channels that uniform aggregation cannot.
 (iii)~The model exports a per-crisis hub ranking, but this ranking is \emph{correlational};
@@ -107,6 +111,9 @@ prediction} on a temporal contagion graph. The hub ranking this predictor export
 signal; original causal inference is not our contribution. In \S\ref{sec:interp} we note that the
 exported ranking must be validated against a calibrated, intervenable contagion model before
 deployment; performing that causal validation is outside this paper's scope.
+Other studies of these same depeg episodes pursue causal-mechanism or execution-profitability
+questions; this paper's distinct object is leakage-safe, day-scale \emph{prediction} under a
+leave-one-crisis-out protocol.
 
 \begin{figure*}[t]
 \centering
@@ -438,9 +445,8 @@ where skill first emerges.}
 
 \paragraph{Headline (averaged over five seeds)} On the held-out SVB cluster at 24 hours, GAT
 attains PR-AUC $0.447 \pm 0.016$, a margin of $\mathbf{+0.175 \pm 0.016}$ over XGBoost, which falls
-\emph{below} the base rate at $0.271$ (Table~\ref{tab:full}). The multi-seed reporting matters here. Our initial single-seed run put GAT at only
-$0.29$, below the five-seed range, so seed noise can materially understate (or overstate) any
-single run; we therefore treat only the multi-seed mean as citable.
+\emph{below} the base rate at $0.271$ (Table~\ref{tab:full}). Only the multi-seed mean is
+citable: a single-seed run put GAT at $0.29$, below the five-seed range.
 All five seeds independently beat XGBoost (sign-test $p=0.031$). GraphSAGE also beats the base
 rate across all five seeds (5-seed mean $0.401 \pm 0.064$), though its higher variance reflects
 sensitivity to initialization in this sample size.
@@ -526,10 +532,9 @@ XGBoost, which fits each noisy episode individually, more than GAT, which propag
 structure} across episodes and so benefits even when a single episode has few positives. Removing
 them lets XGBoost fit the cleaner signal while GAT loses that cross-episode regularization. The graph
 signal thus matters most \emph{precisely when} an episode is sparse, where topology substitutes for
-label density.  A possible (but unproven) reading is that graph density covaries positively with GAT margin
-across the four LOCO folds with a defined GAT margin ($r{=}{+}0.80$, $p{=}0.21$, $n{=}4$); this
-is underpowered and we do not rest any claim on it. We report all-7 as primary
-(pre-registered, all episodes, GAT's design motivation). We state the boundary plainly:
+label density (graph density covaries with GAT margin across the four defined-margin LOCO folds,
+$r{=}{+}0.80$, $p{=}0.21$, $n{=}4$, underpowered and not relied on). We report all-7 as primary
+(pre-registered, GAT's design motivation). We state the boundary plainly:
 \textbf{GAT's advantage does not hold on the stable-5 subset}; the margin is positive only
 when the sparse episodes are included, which we report honestly as a scope boundary rather
 than an unconditional win.
@@ -719,12 +724,10 @@ The SVB cluster is our marquee test (largest, most recent, strongest signal); th
 is the honest multi-fold estimate.
 
 \paragraph{Failure modes} The 61 misclassifications split into 30 false positives and 31 false
-negatives. The false positives are \emph{spurious-edge} errors---the model flags a calm venue
-because a strongly attended neighbour is stressed---and cluster on co-movers: BUSD/Binance during
-FTX ($\hat{p}\approx0.95$), USDT and USDC during the SVB weekend ($\hat{p}\approx1.0$), and USDP/USDC
-during the Terra--USDT episode ($\hat{p}\approx0.70$). The false negatives are \emph{slow-onset}
-misses: gradual depegs scored near zero ($\hat{p}\approx0.08$) where the 6h lead-lag signal is too
-weak. Future work includes regulatory-event filters and finer snapshot granularity.
+negatives. False positives are \emph{spurious-edge} errors---a calm venue flagged because a
+strongly attended neighbour is stressed---clustering on co-movers during FTX, the SVB weekend,
+and the Terra--USDT episode; false negatives are \emph{slow-onset} misses where the 6h lead-lag
+signal is too weak. Future work includes regulatory-event filters and finer snapshot granularity.
 
 \paragraph{Reconciling with prior GNNs} \citet{zhou2025bridge} find GraphSAGE beats GAT on a dense bridge-swap graph where node features dominate. Our setting is the opposite: sparse, directional contagion edges where few lead-lag channels carry all the signal. The edge ablation quantifies this directly---directional edges add $10{\times}$ more lift to GAT than to GraphSAGE, exactly the regime where attention pays over uniform averaging.
 
